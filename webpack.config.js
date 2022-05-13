@@ -17,32 +17,44 @@ module.exports = {
     publicPath: '/',
   },
   module: {
-      rules: [
-        {
-          test: /\.html$/,
-          use: {
-            loader: 'html-loader',
-            options: {
-              attrs: [
-                'img:src',
-                'audio:src',
-              ],
-            }
+    rules: [
+      {
+        test: /\.html$/,
+        use: {
+          loader: 'html-loader',
+          options: {
+            attrs: [
+              'img:src',
+              'audio:src',
+            ],
           }
-        },
-        {
-          test: /\.(jpe?g|png|mp3|wav)$/,
-          use: [
-            {
-              loader: 'file-loader',
-              options: {
-                name: '[path][name].[ext]?[hash:7]',
-                context: 'src',
-              },
+        }
+      },
+      {
+        test: /\.(wasm)$/,
+        type: "javascript/auto",
+        use: {
+            loader: "file-loader",
+            options: {
+                outputPath: "assets/wasm", //set this whatever path you desire
+                name: "[name]-[hash].[ext]"
+            }
+        }
+    },
+      {
+        test: /\.(jpe?g|png|mp3|wav)$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]?[hash:7]',
+              context: 'src',
             },
-          ],
-        },
-      ]
+          },
+        ],
+      },
+  
+    ]
   },
   plugins: [
     // Clean dist/ on each build
@@ -64,4 +76,7 @@ module.exports = {
     clientLogLevel: 'info',
     open: true,
   },
+  node: {
+    fs: 'empty'
+}
 };

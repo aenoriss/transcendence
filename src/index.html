@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>A-Frame Boilerplate</title>
 </head>
+
 <body>
-  <a-scene>
+  <a-scene vr-mode-ui="enabled: false">
     <a-assets>
+      <a-asset-item id="map1" src="bg01.gltf"></a-asset-item>
+      <a-asset-item id="avatar" src="avatar.gltf"></a-asset-item>
     </a-assets>
 
-    <a-box
-      color="blue"
-      position="0 1 -3"
-      rotation="45 45 0"
-    ></a-box>
-
-    <a-camera>
-      <a-cursor></a-cursor>
-    </a-camera>
+    <a-entity gltf-model="#map1" avatarcontrols></a-entity>
+    <a-entity id="player" wasd-controls="acceleration: 170" rotation="0 180 0" position="0 3 0" look-controls
+      jump-ability>
+      <a-entity gltf-model="#avatar" scale="0.002 0.002 0.002" rotation="0 90 0" position="0 -1 -2"></a-entity>
+      <a-entity id="rig" movement-controls="controls: gamepad">
+        <a-entity id="camera" camera="active: true"></a-entity>
+      </a-entity>
+    </a-entity>
   </a-scene>
 </body>
+
 </html>
