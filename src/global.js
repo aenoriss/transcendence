@@ -6,7 +6,12 @@ require('aframe-animation-component');
 require('aframe-event-set-component');
 require('aframe-layout-component');
 require('aframe-template-component');
-require('./components/avatarControls.js');
+require("aframe-particle-system-component")
+
+require('./components/movementDetector');
+require('./components/teleport');
+
+
 require('aframe-extras');
 
 const Ammo = require("ammo.js/builds/ammo.wasm.js");
