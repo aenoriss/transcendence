@@ -10,6 +10,13 @@ AFRAME.registerComponent("movementdetector", {
     let sw = true;
     let sceneEl = document.querySelector("#rig");
     let soundEl = document.createElement("a-sound");
+    soundEl.setAttribute("src", "https://cdn.glitch.global/91eba6f9-a9d4-45db-afeb-7115df7cf197/movement.wav?v=1653046416024");
+    soundEl.setAttribute("loop", true);
+    soundEl.setAttribute("positional", false);
+    soundEl.setAttribute("autoplay", true);
+    soundEl.setAttribute("volume", 0.1);
+    sceneEl.appendChild(soundEl);
+    soundEl.pause();
 
     setInterval(() => {
       this.data.oldPos = { ...this.data.newPos };
@@ -29,13 +36,8 @@ AFRAME.registerComponent("movementdetector", {
       if (this.data.oldPos["x"] != this.data.newPos["x"] || this.data.oldPos["y"] != this.data.newPos["y"] || this.data.oldPos["z"] != this.data.newPos["z"]) {
         if (sw == false) {
           particles.setAttribute("particle-system", "maxAge", 1);
+          soundEl.play();
 
-          soundEl.setAttribute("src", "https://cdn.glitch.global/91eba6f9-a9d4-45db-afeb-7115df7cf197/movement.wav?v=1653046416024");
-          soundEl.setAttribute("loop", true);
-          soundEl.setAttribute("positional", false);
-          soundEl.setAttribute("autoplay", true);
-          soundEl.setAttribute("volume", 0.1);
-          sceneEl.appendChild(soundEl);
 
 
           console.log("STARTED TO MOVE");
