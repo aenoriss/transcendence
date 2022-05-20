@@ -24,7 +24,7 @@ AFRAME.registerComponent("teleport", {
     }
 
     this.spawnPoints = {
-      map0: new THREE.Vector3(0, 3, 0),
+      map0: new THREE.Vector3(0, 4, 0),
       map1: new THREE.Vector3(-31, 4, -50),
       map2: new THREE.Vector3(6, 4, -5),
       map3: new THREE.Vector3(-26, 4, -42),
@@ -38,10 +38,10 @@ AFRAME.registerComponent("teleport", {
     }
 
     this.returnPos = {
-      map0: new THREE.Vector3(60, 4, -30),
-      map1: new THREE.Vector3(-47, 4, -45),
-      map2: new THREE.Vector3(37, 4, -6),
-      map3: new THREE.Vector3(-54, 4, -42),
+      map0: new THREE.Vector3(60, 0, -30),
+      map1: new THREE.Vector3(-47, 0, -45),
+      map2: new THREE.Vector3(37, 0, -6),
+      map3: new THREE.Vector3(-54, 0, -42),
     }
 
   },
@@ -90,6 +90,9 @@ AFRAME.registerComponent("teleport", {
             document.getElementById("artwork10").setAttribute("visible", false);
             document.getElementById("artwork11").setAttribute("visible", false);
             document.getElementById("artwork12").setAttribute("visible", false);
+            document.getElementById("artwork13").setAttribute("visible", false);
+            document.getElementById("artwork14").setAttribute("visible", false);
+            document.getElementById("artwork15").setAttribute("visible", false);
 
           } else {
             this.portals["portal0"].setAttribute("visible", true)
@@ -113,21 +116,28 @@ AFRAME.registerComponent("teleport", {
               document.getElementById("artwork11").setAttribute("visible", true);
               document.getElementById("artwork12").setAttribute("visible", true);
 
-
+            } else if (this.data.goTo == "map2") {
+              document.getElementById("artwork13").setAttribute("visible", true);
+              document.getElementById("artwork14").setAttribute("visible", true);
+              document.getElementById("artwork15").setAttribute("visible", true);
             }
+
+            //Place Return Portal
+            this.portals["portal0"].setAttribute("position", { x: this.returnPos[this.data.goTo]["x"], y: this.returnPos[this.data.goTo]["y"], z: this.returnPos[this.data.goTo]["z"] });
+
+            if ((this.data.goTo == "map2")) {
+              this.portals["portal0"].setAttribute("rotation", { x: 0, y: 270, z: 0 });
+
+            } else {
+              this.portals["portal0"].setAttribute("rotation", { x: 0, y: 90, z: 0 });
+            }
+
+
           }
-
-          //Place Return Portal
-          this.portals["portal0"].setAttribute("position", { x: this.returnPos[this.data.goTo]["x"], y: this.returnPos[this.data.goTo]["y"], z: this.returnPos[this.data.goTo]["z"] });
-
-
         }
+
+
       }
-
-
-
-
-
     }
   },
   remove: function () { },
