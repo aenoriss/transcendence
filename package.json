@@ -17,6 +17,7 @@
     "aframe-template-component": "^3.2.1",
     "ammo.js": "github:mozillareality/ammo.js#hubs/master",
     "cannon": "^0.6.2",
+    "debug": "^4.3.4",
     "fs": "^0.0.1-security",
     "node-sass": "^7.0.1"
   },
