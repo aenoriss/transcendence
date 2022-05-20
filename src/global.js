@@ -10,7 +10,7 @@ require("aframe-particle-system-component")
 
 require('./components/movementDetector');
 require('./components/teleport');
-
+require('./components/showInfo');
 
 require('aframe-extras');
 
