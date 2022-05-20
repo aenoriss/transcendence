@@ -62,6 +62,18 @@ AFRAME.registerComponent("showinfo", {
         title: "THE SMILE THAT DOESN'T LIE",
         description: "His wisdom consists of an eternal smile. His smile and his gaze are beacons for the souls that get lost along the way."
       },
+      artwork13: {
+        title: "THE QUANTUM HEDGEHOG",
+        description: "Some pursue the suspicion that there is something more, sooner or later it is in that search that other dimensions are accessed. Seeing his reflection in a mirror from another dimension awakens the question: who the hell am I?"
+      },
+      artwork14: {
+        title: "THE LAME",
+        description: "What about all those things we can't handle? In those moments it is good to have the wisdom of others who have already walked the path."
+      },
+      artwork15: {
+        title: "THE OLD STORY TELLER",
+        description: "The old woman who tells stories. Her wisdom is about knowledge of the symbolic world and the fruit of the years. She is the embodiment of the accumulated experience of a community."
+      },
     }
   },
 
