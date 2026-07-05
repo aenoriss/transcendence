@@ -33,6 +33,14 @@ flowchart TD
 
 The custom `simple-navmesh-constraint` keeps the player grounded by raycasting straight down onto the navmesh every frame. A single downward ray snags on edges and gaps. So it fans out a scan of eight samples along the movement direction, from dead ahead to plus or minus 80 degrees at shrinking distances. The first sample that hits the mesh wins. From there it applies its own gravity term, clamped to a max fall speed, with a 0.5 unit fall tolerance, so you drop onto lower ledges.
 
+```mermaid
+flowchart TD
+  S[Next sample in the 8-ray fan] --> R[Raycast straight down]
+  R --> H{Hit navmesh?}
+  H -->|no| S
+  H -->|yes| G[Snap to hit point, apply clamped gravity]
+```
+
 ### Ammo.js physics in WebAssembly
 
 Physics runs on aframe-physics-system with the Mozilla Reality build of Ammo.js, compiled to WebAssembly. The level geometry is a `static-body`. A `dynamic-body` box falls under gravity. The avatar gets an `ammo-shape` mesh collider the moment its GLTF finishes loading, so it collides on its actual mesh geometry.
