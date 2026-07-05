@@ -20,7 +20,7 @@ I wanted VR movement that felt like actually walking, so Transcendence lets you 
 The scene is A-Frame. The rig carries `movement-controls` for input and a custom navmesh constraint for grounding. Physics runs on aframe-physics-system with the Ammo.js driver. The navmesh was baked with Recast.
 
 ```mermaid
-flowchart TD
+flowchart LR
   I[movement-controls input] --> N[simple-navmesh-constraint]
   N -->|8-ray scan down onto navmesh| G[Grounded rig position]
   G --> P{Within 6u of a visible portal?}
