@@ -31,15 +31,19 @@ flowchart TD
 
 ### Navmesh-constrained locomotion
 
-The custom `simple-navmesh-constraint` keeps the player grounded by raycasting straight down onto the navmesh every frame. A single downward ray snags on edges and gaps. So it fans out a scan of eight samples along the movement direction, from dead ahead to plus or minus 80 degrees at shrinking distances. It takes the first that lands on the mesh. It then applies its own gravity term, clamped to a max fall speed, with a 0.5 unit fall tolerance, so you land on lower ledges cleanly. This is deliberately cheap. A full physics character controller would blow the VR frame budget; raycast grounding holds framerate and still feels like walking.
+The custom `simple-navmesh-constraint` keeps the player grounded by raycasting straight down onto the navmesh every frame. A single downward ray snags on edges and gaps. So it fans out a scan of eight samples along the movement direction, from dead ahead to plus or minus 80 degrees at shrinking distances. The first sample that hits the mesh wins. From there it applies its own gravity term, clamped to a max fall speed, with a 0.5 unit fall tolerance, so you drop onto lower ledges.
 
 ### Ammo.js physics in WebAssembly
 
-Physics runs on aframe-physics-system with the Mozilla Reality build of Ammo.js, compiled to WebAssembly. The level geometry is a `static-body`. A `dynamic-body` box falls under gravity. The avatar gets an `ammo-shape` mesh collider the moment its GLTF finishes loading, so it collides on its actual mesh geometry for accurate contacts. Running the solver in WASM is what keeps a mesh collider affordable inside a VR frame budget.
+Physics runs on aframe-physics-system with the Mozilla Reality build of Ammo.js, compiled to WebAssembly. The level geometry is a `static-body`. A `dynamic-body` box falls under gravity. The avatar gets an `ammo-shape` mesh collider the moment its GLTF finishes loading, so it collides on its actual mesh geometry.
 
 ### Portals that swap worlds
 
 Getting within range of a portal hides the current map and its artworks, shows the target map, and resets you to that map's spawn point. It also repositions a single return portal. Four separate environments live in one scene with no page reload. Only the active world's artworks stay visible.
+
+### Footsteps from a position poll
+
+The footstep loop and particle trail run off a position poll. Every 100 ms a component samples the rig position and diffs it against the previous sample. If the numbers changed, the trail switches on and the footsteps play; a still frame turns both off.
 
 ## Tech stack
 
