@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Transcendence</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
@@ -142,7 +143,7 @@
       <p class="lede">Four worlds, fifteen pieces, each sealed in an egg. They open in order. Follow the compass, and take the portal it names when a world has no more to show.</p>
       <div class="load"><span id="load-bar"></span></div>
       <button id="enter" disabled>Loading the worlds</button>
-      <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> boost <span>·</span> <kbd>Shift</kbd> jump, hold to fly <span>·</span> <kbd>C</kbd> collection</p>
+      <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> nitro <span>·</span> <kbd>Shift</kbd> jump <span>·</span> <kbd>C</kbd> collection</p>
     </div>
   </div>
 
@@ -150,6 +151,8 @@
     <p class="brand">Transcendence</p>
     <p id="world-label">The Threshold</p>
     <p id="open-collection"><kbd>C</kbd> collection</p>
+    <!-- A piece just added: its picture and the new count, for a second. -->
+    <p id="added"><img id="added-img" alt=""><span>Added <b id="added-count">01 / 15</b></span></p>
   </div>
 
   <!-- Points at the nearest piece you have not read yet, or at a portal when this world has none left. -->
@@ -177,7 +180,7 @@
   <!-- Tints the edge of the view the colour of the boost flame while Space is held. -->
   <div id="boost-fx"></div>
 
-  <p id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> boost <span>·</span> <kbd>Shift</kbd> jump, hold to fly <span>·</span> <kbd>C</kbd> collection</p>
+  <p id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> nitro <span>·</span> <kbd>Shift</kbd> jump <span>·</span> <kbd>C</kbd> collection</p>
 
   <aside id="card">
     <img id="card-thumb" alt="">

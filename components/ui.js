@@ -213,7 +213,7 @@
         $('viewer-desc').textContent = piece.description;
         $('viewer-close').focus();
       }
-      hold(open || (collection.classList.contains('is-on') && !collection.classList.contains('is-peek')));
+      hold(open || collection.classList.contains('is-on'));
     }
 
     // ---- The collection: fifteen slots. An opened piece shows itself and can be looked at
@@ -238,31 +238,31 @@
       $('collection-count').textContent = two(Object.keys(opened).length) + ' / 15 opened';
     }
     function setCollection(open) {
-      clearTimeout(peekTimer);
-      collection.classList.remove('is-peek');
       collection.classList.toggle('is-on', open);
       hold(open);
       if (open) $('collection-close').focus();
     }
-    // A new piece: once its egg has finished opening, the collection shows itself for a moment
-    // with the piece dropping into its slot, then gets out of the way. The rider is not held.
-    var peekTimer = null;
-    function peek(number) {
-      if (collection.classList.contains('is-on') && !collection.classList.contains('is-peek')) return;
+    // A new piece does not take the screen. Its picture drops in beside the collection label
+    // in the corner for a second, and the ride goes on.
+    var peekTimer = null, added = $('added');
+    function peek(piece) {
       clearTimeout(peekTimer);
       Object.keys(slots).forEach(function (k) { slots[k].classList.remove('is-fresh'); });
-      void slots[number].offsetWidth;
-      slots[number].classList.add('is-fresh');
-      collection.classList.add('is-on', 'is-peek');
-      peekTimer = setTimeout(function () { collection.classList.remove('is-on', 'is-peek'); }, 950);
+      slots[piece.number].classList.add('is-fresh');     // still marked if the collection is opened next
+      $('added-img').src = piece.src;
+      $('added-count').textContent = two(Object.keys(opened).length) + ' / 15';
+      added.classList.remove('is-on');
+      void added.offsetWidth;
+      added.classList.add('is-on');
+      peekTimer = setTimeout(function () { added.classList.remove('is-on'); }, 1200);
     }
     scene.addEventListener('artworknear', function (e) {
       openSlot(e.detail);
       if (!e.detail.first) return;
       var last = Object.keys(opened).length === 15;
-      setTimeout(function () { peek(e.detail.number); }, 750);
-      // The last egg: let its opening and the collection play out, then show the end.
-      if (last) setTimeout(showWin, 2400);
+      setTimeout(function () { peek(e.detail); }, 500);
+      // The last egg: let its opening play out, then show the end.
+      if (last) setTimeout(showWin, 2200);
     });
 
     // ---- The end: all fifteen figures arrive one after another over the sky, with how long
@@ -297,7 +297,7 @@
       if (!entered) return;
       if (win.classList.contains('is-on')) return;
       var viewing = viewer.classList.contains('is-on');
-      var browsing = collection.classList.contains('is-on') && !collection.classList.contains('is-peek');
+      var browsing = collection.classList.contains('is-on');
       if (e.code === 'KeyE' && (viewing || !browsing)) setViewer(!viewing);
       if (e.code === 'KeyC' && !viewing) setCollection(!browsing);
       if (e.code === 'Escape') { if (viewing) setViewer(false); else if (browsing) setCollection(false); }
@@ -320,7 +320,6 @@
         fuelRing.style.strokeDashoffset = ((1 - fuelShown) * 100).toFixed(2);
         fuelText.textContent = 'Fuel ' + Math.round(fuelShown * 100);
         compass.classList.toggle('is-low-fuel', fuelShown < 0.2);
-        compass.classList.toggle('is-burning', walker.flying);
       }
       if (!entered || now - lastUpdate < 90) return;
       lastUpdate = now;

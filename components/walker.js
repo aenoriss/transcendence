@@ -2,7 +2,7 @@
 
 // Moves the rig like a rider on a board: held to the ground, stopped by mountains and by
 // the rock of a portal, lifted by ramps, carried through the air when the ground falls away,
-// and able to fly for as long as there is fuel.
+// with nitro and jumps that both run on one tank of fuel.
 //
 // movement-controls moves the rig sideways and forwards. This component decides whether each
 // of those steps is allowed, and owns the height and the speed.
@@ -15,10 +15,10 @@
 //              that surface was carrying it upward.
 //   Air        When the surface drops away (the lip of a kicker), the rig leaves it with that
 //              upward speed and falls under gravity until it meets the ground again.
-//   Boost      Space, while held: faster.
-//   Shift      One key for jumping and flying. A press is a jump. Kept down, and while there
-//              is fuel, the jump becomes flight: the board holds a height above whatever is
-//              under it and builds up to its top speed. Fuel comes back when Shift is released.
+//   Momentum   Letting go of the keys does not stop the board. It coasts and slows by friction.
+//   Nitro      Space, while held: the speed winds up the longer it is held, and fuel drains.
+//   Jump       Shift. Each jump burns a quarter of the tank, and works in the air too.
+//   Fuel       One tank for both. It comes back slowly, after a pause without using any.
 AFRAME.registerComponent('walker', {
   schema: {
     eye: { default: 3 },         // rig height above its feet
@@ -30,14 +30,14 @@ AFRAME.registerComponent('walker', {
     maxRise: { default: 46 },    // fastest the rig is lifted onto a landform, units per second
     maxLaunch: { default: 26 },  // cap on the speed a lip can throw the rig up at
     speed: { default: 1.0 },
-    boost: { default: 1.7 },
-    hop: { default: 13 },        // the jump a press of Shift starts with
-    flySpeed: { default: 2.8 },  // speed multiplier at full flight
-    flyHeight: { default: 10 },  // height the flight holds above the ground
-    flyLift: { default: 34 },    // how hard the board pushes up toward that height
-    flyClimb: { default: 12 },   // fastest it rises
-    flyFuel: { default: 3.2 },   // seconds of flight in a full tank
-    flyRefill: { default: 4 },   // seconds to refill it
+    boost: { default: 2.6 },     // top speed under nitro, as a multiple
+    hop: { default: 27 },        // upward speed of a Shift jump: about 14 units high
+    hopCost: { default: 0.25 },  // share of the tank each jump burns
+    nitroFuel: { default: 6 },   // seconds of nitro in a full tank
+    refill: { default: 22 },     // seconds to refill the tank from empty
+    refillPause: { default: 1.5 }, // seconds without using fuel before it starts to come back
+    nitroTime: { default: 2.4 }, // seconds of Space to reach top speed
+    friction: { default: 1.5 },  // how fast a coasting board loses its speed, per second
     portalRock: { default: 21 }, // radius of a portal's solid base
     portalMouth: { default: 42 },// how wide the opening is, in degrees either side of its front
   },
@@ -70,7 +70,10 @@ AFRAME.registerComponent('walker', {
     this.shiftDown = false;
     this.boosting = false;
     this.flying = false;
-    this.fuel = 1;            // 0 to 1, read by the fuel bar
+    this.fuel = 1;            // 0 to 1, read by the fuel ring in the compass
+    this.nitro = 0;           // 0 to 1, how far Space has wound the speed up
+    this.restFor = 99;        // seconds since fuel was last used
+    this.carry = new THREE.Vector2();   // the speed the board keeps when the keys are let go
     this.speedMul = 1;
     this.speedSet = 1;
     this.hot = null;          // whether the flame is in its boost colours
@@ -175,11 +178,37 @@ AFRAME.registerComponent('walker', {
     var dx = p.x - last.x, dz = p.z - last.z;
     var dist = Math.sqrt(dx * dx + dz * dz);
 
+    // Momentum. The controls stop the rig almost at once when the keys are let go. The board
+    // should not: it keeps the speed it had and loses it to friction. `carry` is that speed.
+    // While the controls are driving at least as fast, it follows them. When they fall away,
+    // it takes over the step and decays.
+    if (!this.locked && dist < 20) {
+      var carry = this.carry, had = Math.sqrt(carry.x * carry.x + carry.y * carry.y);
+      var now = dist / dt;
+      if (now >= had * 0.92) {
+        carry.x += (dx / dt - carry.x) * Math.min(1, dt * 10);
+        carry.y += (dz / dt - carry.y) * Math.min(1, dt * 10);
+      } else if (had > 0.6) {
+        var keep = Math.exp(-data.friction * dt);
+        // Keys still down in another direction steer the coast toward it.
+        if (now > 1) { carry.x += (dx / dt - carry.x) * Math.min(1, dt * 3); carry.y += (dz / dt - carry.y) * Math.min(1, dt * 3); }
+        carry.x *= keep; carry.y *= keep;
+        p.x = last.x + carry.x * dt; p.z = last.z + carry.y * dt;
+        dx = p.x - last.x; dz = p.z - last.z;
+        dist = Math.sqrt(dx * dx + dz * dz);
+      } else {
+        carry.set(0, 0);
+      }
+    } else {
+      this.carry.set(0, 0);
+    }
+
     if (dist >= 20) {
       // A portal moved the rig in one jump. Start again on the new world's ground.
       this.footY = 0; this.vy = 0; this.climb = 0; this.grounded = true;
       this.footY = this.surface(p.x, p.z);
     } else if (dist > 0.0005 && this.blocked(last.x, last.z, p.x, p.z)) {
+      this.carry.multiplyScalar(0.5);     // hitting something takes the speed out of the board
       if (this.slide(last, p)) { /* turned along the face */ }
       else if (Math.abs(dx) > 0.0005 && !this.blocked(last.x, last.z, p.x, last.z)) p.z = last.z;
       else if (Math.abs(dz) > 0.0005 && !this.blocked(last.x, last.z, last.x, p.z)) p.x = last.x;
@@ -188,33 +217,27 @@ AFRAME.registerComponent('walker', {
 
     var ground = this.surface(p.x, p.z);
 
-    // Flight lasts as long as Shift is held and the tank is not empty. The tank refills once
-    // Shift is let go.
-    var flying = this.shiftDown && !this.locked && this.fuel > 0;
-    if (flying) this.fuel = Math.max(0, this.fuel - dt / data.flyFuel);
-    else if (!this.shiftDown) this.fuel = Math.min(1, this.fuel + dt / data.flyRefill);
-    this.flying = flying;
-    var boosting = this.spaceDown && !this.locked;
-    if (boosting !== this.boosting) { this.boosting = boosting; }
+    // One tank for both. Nitro drains it while Space is held and stops when it is empty.
+    // It refills slowly, and only after a pause since it was last used, so fuel is something
+    // to spend with care.
+    var boosting = this.spaceDown && !this.locked && this.fuel > 0;
+    this.boosting = boosting;
+    if (boosting) { this.fuel = Math.max(0, this.fuel - dt / data.nitroFuel); this.restFor = 0; }
+    else this.restFor += dt;
+    if (this.restFor > data.refillPause) this.fuel = Math.min(1, this.fuel + dt / data.refill);
 
-    // Shift is one key for both: pressing it is a jump, and keeping it down turns the jump
-    // into flight. A tap is only the jump.
-    if (this.hopQueued && !this.locked && this.fuel > 0.05) {
-      this.vy = Math.max(this.vy, data.hop);
+    // Shift jumps, and each jump burns a chunk of fuel. It works in the air too, so jumps can
+    // be chained for as long as the tank lasts.
+    if (this.hopQueued && !this.locked && this.fuel >= data.hopCost) {
+      this.fuel -= data.hopCost;
+      this.restFor = 0;
+      this.vy = data.hop;
       this.grounded = false;
+      this.el.sceneEl.emit('hop');
     }
     this.hopQueued = false;
 
-    if (flying) {
-      // A gentle lift toward a height above whatever is underneath, then holding there.
-      this.grounded = false;
-      var want = ground + data.flyHeight;
-      if (this.footY < want) { if (this.vy < data.flyClimb) this.vy = Math.min(data.flyClimb, this.vy + data.flyLift * dt); }
-      else this.vy -= data.gravity * 0.3 * dt;
-      this.vy = Math.max(-4, this.vy);
-      this.vy *= 1 - Math.min(1, dt * 1.2);            // eased, so it settles instead of bouncing
-      this.footY = Math.max(ground, this.footY + this.vy * dt);
-    } else if (this.grounded) {
+    if (this.grounded) {
       if (ground < this.footY - 0.6) {
         // The ground dropped away: off a lip or an edge. Keep the speed it was lifting us at.
         this.vy = Math.min(data.maxLaunch, Math.max(0, this.climb) * data.pop);
@@ -226,7 +249,7 @@ AFRAME.registerComponent('walker', {
         this.footY += step;
       }
     }
-    if (!flying && !this.grounded) {
+    if (!this.grounded) {
       this.vy -= data.gravity * dt;
       this.footY += this.vy * dt;
       if (this.footY <= ground) {
@@ -236,16 +259,17 @@ AFRAME.registerComponent('walker', {
     }
     p.y = this.footY + data.eye;
 
-    // Speed builds and falls away gradually instead of switching.
-    var wantSpeed = flying ? data.flySpeed : boosting ? data.boost : 1;
-    this.speedMul += (wantSpeed - this.speedMul) * Math.min(1, dt * (wantSpeed > this.speedMul ? 2.8 : 3.4));
+    // Nitro is progressive: the longer Space is held, the faster, up to the top speed after
+    // `nitroTime` seconds. Letting go bleeds it off.
+    this.nitro = Math.max(0, Math.min(1, this.nitro + (boosting ? dt / data.nitroTime : -dt * 1.4)));
+    this.speedMul = 1 + (data.boost - 1) * this.nitro * (2 - this.nitro);   // quick at first, then easing in
     if (Math.abs(this.speedMul - this.speedSet) > 0.03) {
       this.speedSet = this.speedMul;
       this.el.setAttribute('movement-controls', 'speed', data.speed * this.speedMul);
     }
 
-    // The flame burns blue and bigger while boosting or flying, and the page tints to match.
-    var hot = flying || boosting;
+    // The flame burns blue and bigger under nitro, and the page tints to match.
+    var flying = false, hot = boosting;
     if (hot !== this.hot) {
       this.hot = hot;
       if (this.trail) {

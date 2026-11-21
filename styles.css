@@ -734,23 +734,43 @@ html.is-boosting #boost-fx {
   width: min(980px, 100%);
 }
 
-/* The brief look after a new piece: quick in and out, lighter, not clickable, and the new
-   slot drops in. Short enough not to break the ride. */
 #collection {
   transition-duration: 0.14s;
 }
 
-#collection.is-peek {
-  background: rgba(5, 5, 7, 0.6);
-  pointer-events: none;
+/* A piece just added: a small note in the corner under the collection label. It never
+   covers the ride. */
+#added {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px !important;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-#collection.is-peek #collection-close {
-  visibility: hidden;
+#added.is-on {
+  opacity: 1;
+  transform: none;
 }
 
-#collection-grid li.is-fresh img {
-  animation: drop-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+#added img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+#added.is-on img {
+  animation: drop-in 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+#added b {
+  color: var(--accent);
 }
 
 #collection-grid li.is-fresh {

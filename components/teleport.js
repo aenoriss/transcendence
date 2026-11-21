@@ -41,6 +41,13 @@ function showWorld(key) {
   scene.emit('worldchange', { key: key, map: world.map, name: world.name, accent: world.accent, artworks: world.artworks });
 }
 
+// The texture transforms portal.gltf declares for the two discs in its mouth, by material name.
+// Copied from the file's KHR_texture_transform entries.
+var MOUTH_TEXTURE = {
+  'Material.003': { offset: [-0.06, 0], scale: [1.12, 0.99] },
+  'Material.009': { offset: [-0.04, -0.02], scale: [1.09, 1.03] },
+};
+
 // A soft round dot, shared by the motes of every portal.
 var DOT = (function () {
   var c = document.createElement('canvas');
@@ -53,7 +60,7 @@ var DOT = (function () {
   return c;
 })();
 
-// The sign over a portal: the destination's sigil and name. It always faces the rider.
+// The sign over a portal: the destination's sigil and name.
 // Worlds are known by name only, never by a number.
 function portalSign(world) {
   var canvas = document.createElement('canvas');
@@ -78,9 +85,12 @@ function portalSign(world) {
   };
   draw();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
-  var sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, fog: false, depthWrite: false }));
-  sprite.scale.set(40, 12.5, 1);
-  return sprite;
+  // A board, not a sprite: it has a place on the portal and stays there. It only turns on
+  // its post to face the rider (see tick), and never tilts or slides with the camera.
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 12.5),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, fog: false, depthWrite: false })
+  );
 }
 
 AFRAME.registerComponent('teleport', {
@@ -110,9 +120,9 @@ AFRAME.registerComponent('teleport', {
     var light = new THREE.PointLight(colour, 1.2, 60, 1.8);
     light.position.y = 9;
     var sign = portalSign(world);
-    // The sign is kept on whichever side of the portal the rider is on (see tick), so neither
-    // the rock nor the ray going up from its top ever stands between you and the name.
-    sign.position.set(0, 27, 27);
+    // The sign hangs over the mouth, out in front of the rock and clear of the ray going up
+    // from its top. It is fixed there.
+    sign.position.set(0, 27, 24);
     this.sign = sign;
 
     // The motes keep outside the rock, which the rider cannot pass either, so none cuts through it.
@@ -144,6 +154,15 @@ AFRAME.registerComponent('teleport', {
         if (!n.material || !n.material.color) return;
         if (!n.userData.ownMaterial) { n.material = n.material.clone(); n.userData.ownMaterial = true; n.userData.base = n.material.color.clone(); }
         var m = n.material;
+        // The picture inside the mouth. portal.gltf places it with KHR_texture_transform,
+        // which the loader in A-Frame 0.8.2 does not read, so it came out shifted and
+        // stretched. The model's own offset and scale are applied here instead.
+        var placed = MOUTH_TEXTURE[m.name];
+        if (placed && m.map) {
+          m.map.offset.set(placed.offset[0], placed.offset[1]);
+          m.map.repeat.set(placed.scale[0], placed.scale[1]);
+          m.map.needsUpdate = true;
+        }
         box.setFromObject(n);
         var tall = box.max.y - box.min.y, wide = Math.max(box.max.x - box.min.x, box.max.z - box.min.z);
         if (tall > 200 && tall > wide * 6) {
@@ -168,14 +187,12 @@ AFRAME.registerComponent('teleport', {
     var dx = rigPos.x - here.x, dz = rigPos.z - here.z;
     var away = Math.sqrt(dx * dx + dz * dz);
 
-    // Swing the sign round to the rider's side. Its place is given in the portal's own frame,
-    // so the direction to the rider is turned back by the portal's rotation first.
+    // The sign turns on the spot to face the rider, upright, like a board on a post. Its
+    // heading is worked out in the world and then put into the portal's own frame.
     if (away > 0.5) {
-      var turn = this.el.object3D.rotation.y, wx = dx / away, wz = dz / away;
-      var lx = wx * Math.cos(turn) - wz * Math.sin(turn), lz = wx * Math.sin(turn) + wz * Math.cos(turn);
-      var ease = Math.min(1, delta * 0.005);
-      this.sign.position.x += (lx * 27 - this.sign.position.x) * ease;
-      this.sign.position.z += (lz * 27 - this.sign.position.z) * ease;
+      var wantYaw = Math.atan2(dx, dz) - this.el.object3D.rotation.y;
+      var gap = Math.atan2(Math.sin(wantYaw - this.sign.rotation.y), Math.cos(wantYaw - this.sign.rotation.y));
+      this.sign.rotation.y += gap * Math.min(1, delta * 0.006);
     }
 
     // The effects run hotter as the rider comes close.
