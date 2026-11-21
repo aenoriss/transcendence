@@ -6,45 +6,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Transcendence</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
+  <script src="components/constraint.js"></script>
+  <script src="components/teleport.js"></script>
+  <script src="components/showInfo.js"></script>
 </head>
 
 <body>
-  <a-scene vr-mode-ui="enabled: false" physics="debug: true" inspector-plugin-recast>
+  <a-scene vr-mode-ui="enabled: false" physics="debug: false">
 
-    <!-- sound="src: url(https://cdn.glitch.global/91eba6f9-a9d4-45db-afeb-7115df7cf197/soundtrack.wav?v=1653045752258); autoplay: true; loop: true; positional: false; volume: 0.5" -->
+    <a-assets timeout="60000">
+      <!-- Every model is a file in this repo. The three coloured portal models were only ever
+           on Glitch's CDN, which is gone, so all portals share portal.gltf. -->
+      <a-asset-item id="m1" src="map1.gltf"></a-asset-item>
+      <a-asset-item id="m2" src="map2.gltf"></a-asset-item>
+      <a-asset-item id="m3" src="map3.gltf"></a-asset-item>
+      <a-asset-item id="m4" src="map4.gltf"></a-asset-item>
 
-    <a-assets>
-      <a-asset-item id="m1" src="https://cdn.glitch.global/6585330c-4b42-4ed2-b888-5ce70bb32b38/map1.gltf?v=1657572817358"></a-asset-item>
-      <a-asset-item id="m2" src="https://cdn.glitch.global/6585330c-4b42-4ed2-b888-5ce70bb32b38/map2.gltf?v=1657572816450"></a-asset-item>
-      <a-asset-item id="m3" src="https://cdn.glitch.global/6585330c-4b42-4ed2-b888-5ce70bb32b38/map3.gltf?v=1657572817019"></a-asset-item>
-      <a-asset-item id="m4" src="https://cdn.glitch.global/6585330c-4b42-4ed2-b888-5ce70bb32b38/map4.gltf?v=1657572816765"></a-asset-item>
+      <a-asset-item id="avatar" src="avatar.gltf"></a-asset-item>
+      <a-asset-item id="portal" src="portal.gltf"></a-asset-item>
 
-      <a-asset-item id="avatar" src="https://cdn.glitch.me/6585330c-4b42-4ed2-b888-5ce70bb32b38/Erizo.gltf?v=1657572807924"></a-asset-item>
-      <a-asset-item id="bluePortal" src="https://cdn.glitch.me/6585330c-4b42-4ed2-b888-5ce70bb32b38/Portal_Azul.gltf?v=1657572832438"></a-asset-item>
-      <a-asset-item id="greenPortal" src="https://cdn.glitch.me/6585330c-4b42-4ed2-b888-5ce70bb32b38/Portal_verde.gltf?v=1657572827026"></a-asset-item>
-      <a-asset-item id="pinkPortal" src="https://cdn.glitch.global/6585330c-4b42-4ed2-b888-5ce70bb32b38/Portal_Rosa.gltf?v=1657572831040"></a-asset-item>
+      <a-asset-item id="navmesh" src="navmesh.gltf"></a-asset-item>
 
-      <a-asset-item id="navmesh" src="../navmesh.gltf"></a-asset-item>
+      <img id="sky" src="sky.png">
 
-      <img id="sky" src="../sky.png">
+      <img id="art1" src="Textures/artwork1.png">
+      <img id="art2" src="Textures/artwork2.png">
+      <img id="art3" src="Textures/artwork3.png">
+      <img id="art4" src="Textures/artwork4.png">
+      <img id="art5" src="Textures/artwork5.png">
+      <img id="art6" src="Textures/artwork6.png">
+      <img id="art7" src="Textures/artwork7.png">
+      <img id="art8" src="Textures/artwork8.png">
+      <img id="art9" src="Textures/artwork9.png">
+      <img id="art10" src="Textures/artwork10.png">
+      <img id="art11" src="Textures/artwork11.png">
+      <img id="art12" src="Textures/artwork12.png">
+      <img id="art13" src="Textures/artwork13.png">
+      <img id="art14" src="Textures/artwork14.png">
+      <img id="art15" src="Textures/artwork15.png">
 
-      <img id="art1" src="../Textures/artwork1.png">
-      <img id="art2" src="../Textures/artwork2.png">
-      <img id="art3" src="../Textures/artwork3.png">
-      <img id="art4" src="../Textures/artwork4.png">
-      <img id="art5" src="../Textures/artwork5.png">
-      <img id="art6" src="../Textures/artwork6.png">
-      <img id="art7" src="../Textures/artwork7.png">
-      <img id="art8" src="../Textures/artwork8.png">
-      <img id="art9" src="../Textures/artwork9.png">
-      <img id="art10" src="../Textures/artwork10.png">
-      <img id="art11" src="../Textures/artwork11.png">
-      <img id="art12" src="../Textures/artwork12.png">
-      <img id="art13" src="../Textures/artwork13.png">
-      <img id="art14" src="../Textures/artwork14.png">
-      <img id="art15" src="../Textures/artwork15.png">
-
-      <audio id="soundtrack" src="../Textures/soundtrack.wav">
+      <audio id="soundtrack" src="Textures/soundtrack.wav"></audio>
     </a-assets>
 
     <a-entity id="map1" gltf-model="#m1" scale="2 2 2" visible="true" static-body="shape: box"></a-entity>
@@ -59,14 +65,16 @@
     <a-sphere color="blue" radius="5" id="portal3" position="101 4 -193" teleport="goTo: map3"></a-sphere> -->
 
     <a-entity id="portalSpawn" animation-mixer="*" visible="false" gltf-model="#portal" position="1.39 -2 -19.8" teleport></a-entity>
-    <a-entity id="portal1" animation-mixer="*" visible="true" gltf-model="#greenPortal"  rotation="0 -90 0" position="151 -2 47" teleport="goTo: map1"></a-entity>
-    <a-entity id="portal2" animation-mixer="*" visible="true" gltf-model="#pinkPortal"  rotation="0 180 0" position="49.5 -2 189" teleport="goTo: map2"></a-entity>
-    <a-entity id="portal3" animation-mixer="* " visible="true" gltf-model="#bluePortal" position="103.87 -2 -108" rotation="0 -21.017 0" ></a-entity>
+    <a-entity id="portal1" animation-mixer="*" visible="true" gltf-model="#portal"  rotation="0 -90 0" position="151 -2 47" teleport="goTo: map1"></a-entity>
+    <a-entity id="portal2" animation-mixer="*" visible="true" gltf-model="#portal"  rotation="0 180 0" position="49.5 -2 189" teleport="goTo: map2"></a-entity>
+    <a-entity id="portal3" animation-mixer="* " visible="true" gltf-model="#portal" position="103.87 -2 -108" rotation="0 -21.017 0" ></a-entity>
 
     <a-entity id="lol" gltf-model="#navmesh"></a-entity>
 
     <a-entity id="rig" movement-controls="speed: 1.4" simple-navmesh-constraint="navmesh:#lol" rotation="0 180 0" position="0 3 0" look-controls >
-      <a-entity gltf-model="#avatar" animation-mixer="clip:rigAction; action" scale="0.5 0.5 0.5" rotation="90 90 0" position="0 -1 -2"></a-entity>
+      <!-- The May 2022 avatar, at the scale and clip it shipped with. Its July replacement
+           (Erizo.gltf) was only on Glitch's CDN and is gone. -->
+      <a-entity gltf-model="#avatar" animation-mixer="clip:animation_0" scale="0.002 0.002 0.002" rotation="0 90 0" position="0 -1 -2"></a-entity>
       <a-entity id="camera" camera="active: true"></a-entity>
       <a-entity id="particles" position="0 -2 -3" rotation="0 180 0"
         particle-system="color: #EF0000,#44CC00; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 1.5; maxAge: 1;">

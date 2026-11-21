@@ -1,5 +1,3 @@
-const { Vector3 } = require("aframe");
-
 AFRAME.registerComponent("showinfo", {
   schema: {},
   init: function () {

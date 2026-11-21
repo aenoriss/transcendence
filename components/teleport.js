@@ -1,5 +1,3 @@
-const { Vector3 } = require("aframe");
-
 AFRAME.registerComponent("teleport", {
   schema: {
     goTo: { default: "map0" },
