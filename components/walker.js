@@ -50,6 +50,7 @@ AFRAME.registerComponent('walker', {
     this.avatar = this.el.querySelector('#avatar-pivot');
     this.model = this.el.querySelector('#avatar');
     this.trail = this.el.querySelector('#particles');
+    this.trailHot = this.el.querySelector('#particles-hot');
     this.camera = this.el.querySelector('[camera]');
     this.landforms = this.el.sceneEl.systems.landforms;
     this.last = new THREE.Vector3().copy(this.el.object3D.position);
@@ -57,6 +58,7 @@ AFRAME.registerComponent('walker', {
     this.origin = new THREE.Vector3();
     this.down = new THREE.Vector3(0, -1, 0);
     this.hits = [];
+    this.grids = {};          // map id -> its faces sorted into cells, built on first use
     this.footY = 0;
     this.vy = 0;
     this.climb = 0;
@@ -101,9 +103,67 @@ AFRAME.registerComponent('walker', {
     return this.hits.length ? this.hits[0].point.y : -Infinity;
   },
 
+  // A world is about 25,000 triangles, and a step asks for the ground height several times.
+  // Casting a ray at the whole mesh each time was the slowest thing in the frame. So each
+  // world's solid faces are sorted once into a grid of 12-unit cells, and a lookup only
+  // tests the triangles filed under the cell it falls in, a few dozen instead of all of them.
+  buildGrid: function (mapEl) {
+    var cell = 12, bins = {}, tris = [], v = new THREE.Vector3();
+    mapEl.object3D.updateMatrixWorld(true);
+    mapEl.object3D.traverse(function (n) {
+      if (!n.isMesh || n.material.color.getHex() === 0xffffff) return;     // the wire is not ground
+      var pos = n.geometry.attributes.position, index = n.geometry.index;
+      var count = index ? index.count : pos.count;
+      for (var i = 0; i < count; i += 3) {
+        var t = [];
+        for (var k = 0; k < 3; k++) {
+          var at = index ? index.array[i + k] : i + k;
+          v.set(pos.getX(at), pos.getY(at), pos.getZ(at)).applyMatrix4(n.matrixWorld);
+          t.push(v.x, v.y, v.z);
+        }
+        if (Math.max(t[1], t[4], t[7]) < 0.05) continue;                     // flat floor: height 0 anyway
+        var id = tris.length;
+        tris.push(t);
+        var x0 = Math.floor(Math.min(t[0], t[3], t[6]) / cell), x1 = Math.floor(Math.max(t[0], t[3], t[6]) / cell);
+        var z0 = Math.floor(Math.min(t[2], t[5], t[8]) / cell), z1 = Math.floor(Math.max(t[2], t[5], t[8]) / cell);
+        for (var cx = x0; cx <= x1; cx++) for (var cz = z0; cz <= z1; cz++) {
+          var key = cx + ',' + cz;
+          (bins[key] || (bins[key] = [])).push(id);
+        }
+      }
+    });
+    return { cell: cell, bins: bins, tris: tris };
+  },
+
+  // Highest point of the world's faces straight above or below (x, z).
+  gridHeight: function (grid, x, z) {
+    var list = grid.bins[Math.floor(x / grid.cell) + ',' + Math.floor(z / grid.cell)];
+    if (!list) return 0;
+    var best = 0;
+    for (var i = 0; i < list.length; i++) {
+      var t = grid.tris[list[i]];
+      // Where (x, z) falls inside the triangle seen from above, as weights of its corners.
+      var d = (t[5] - t[8]) * (t[0] - t[6]) + (t[6] - t[3]) * (t[2] - t[8]);
+      if (d > -1e-9 && d < 1e-9) continue;                                   // edge-on from above
+      var a = ((t[5] - t[8]) * (x - t[6]) + (t[6] - t[3]) * (z - t[8])) / d;
+      var b = ((t[8] - t[2]) * (x - t[6]) + (t[0] - t[6]) * (z - t[8])) / d;
+      var c = 1 - a - b;
+      if (a < 0 || b < 0 || c < 0) continue;
+      var y = a * t[1] + b * t[4] + c * t[7];
+      if (y > best) best = y;
+    }
+    return best;
+  },
+
   mapHeight: function (x, z) {
     for (var i = 0; i < this.maps.length; i++) {
-      if (this.maps[i].object3D.visible) return Math.max(0, this.cast(x, z, [this.maps[i].object3D]));
+      var el = this.maps[i];
+      if (!el.object3D.visible) continue;
+      if (!this.grids[el.id]) {
+        if (!el.getObject3D('mesh')) return 0;                               // model not in yet
+        this.grids[el.id] = this.buildGrid(el);
+      }
+      return this.gridHeight(this.grids[el.id], x, z);
     }
     return 0;
   },
@@ -141,8 +201,9 @@ AFRAME.registerComponent('walker', {
     var x = toX + dx / len * this.data.reach, z = toZ + dz / len * this.data.reach;
     if (Math.abs(x) > this.data.bound || Math.abs(z) > this.data.bound) return true;
     if (this.inPortalRock(x, z)) return true;
-    if (this.rampHeight(x, z) >= this.mapHeight(x, z)) return false;   // a landform is never a wall
-    return this.mapHeight(x, z) - this.footY > this.data.maxStep;
+    var ground = this.mapHeight(x, z);
+    if (ground - this.footY <= this.data.maxStep) return false;
+    return this.rampHeight(x, z) < ground;                             // a landform is never a wall
   },
 
   // When a step is refused, the rider turns along the face instead of stopping. The slope's
@@ -263,19 +324,15 @@ AFRAME.registerComponent('walker', {
     // `nitroTime` seconds. Letting go bleeds it off.
     this.nitro = Math.max(0, Math.min(1, this.nitro + (boosting ? dt / data.nitroTime : -dt * 1.4)));
     this.speedMul = 1 + (data.boost - 1) * this.nitro * (2 - this.nitro);   // quick at first, then easing in
-    if (Math.abs(this.speedMul - this.speedSet) > 0.03) {
-      this.speedSet = this.speedMul;
-      this.el.setAttribute('movement-controls', 'speed', data.speed * this.speedMul);
-    }
+    // Written straight into the controls. Going through setAttribute on every change costs
+    // a schema parse per frame while the speed is winding up.
+    var drive = this.el.components['movement-controls'];
+    if (drive) drive.data.speed = data.speed * this.speedMul;
 
-    // The flame burns blue and bigger under nitro, and the page tints to match.
-    var flying = false, hot = boosting;
+    // Under nitro the page tints to the colour of the nitro flame.
+    var hot = boosting;
     if (hot !== this.hot) {
       this.hot = hot;
-      if (this.trail) {
-        this.trail.setAttribute('particle-system', 'color', hot ? '#2bd1ff,#f4fbff' : '#EF0000,#44CC00');
-        this.trail.setAttribute('particle-system', 'size', hot ? 2.1 : 1.5);
-      }
       this.el.sceneEl.emit('boost', { on: hot });
     }
 
@@ -309,12 +366,19 @@ AFRAME.registerComponent('walker', {
     }
 
     // Standing still for a moment switches the flame and the avatar's animation off.
-    this.stillFor = moved || flying ? 0 : this.stillFor + delta;
+    this.stillFor = moved ? 0 : this.stillFor + delta;
     var moving = this.stillFor < 120;
     if (moving !== this.moving) {
       this.moving = moving;
-      if (this.trail) this.trail.setAttribute('particle-system', 'maxAge', moving ? 1 : 0);
       if (this.model) this.model.setAttribute('animation-mixer', 'timeScale', moving ? 1 : 0);
     }
+    // There are two flames, the ordinary one and the blue nitro one, and only ever one is
+    // shown. Changing a particle system's colour or size rebuilds it, which froze the frame
+    // for about 170 ms each time nitro started or stopped. Showing and hiding costs nothing.
+    if (this.trail) this.trail.object3D.visible = moving && !hot;
+    // For the first second the nitro flame is drawn too, so the graphics card compiles it
+    // at the start, behind the entry screen's fade, and not on the first press of Space.
+    this.warmed = (this.warmed || 0) + delta;
+    if (this.trailHot) this.trailHot.object3D.visible = (moving && hot) || this.warmed < 1000;
   },
 });

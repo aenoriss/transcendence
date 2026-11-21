@@ -89,6 +89,11 @@
         <a-entity id="particles" position="0 -2.35 0.75" rotation="0 180 0"
           particle-system="color: #EF0000,#44CC00; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 1.5; maxAge: 1;">
         </a-entity>
+        <!-- The nitro flame: the same flame, blue and bigger. It is its own entity so that
+             switching between the two is a matter of showing one and hiding the other. -->
+        <a-entity id="particles-hot" position="0 -2.35 0.75" rotation="0 180 0" visible="false"
+          particle-system="color: #2bd1ff,#f4fbff; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 2.1; maxAge: 1;">
+        </a-entity>
       </a-entity>
     </a-entity>
 
