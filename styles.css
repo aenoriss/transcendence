@@ -1,9 +1,9 @@
 :root {
   --accent: #ff3df2;          /* follows the world you are in, set from components/ui.js */
-  --ink: #f4f1ff;
-  --ink-soft: rgba(244, 241, 255, 0.68);
-  --glass: rgba(8, 4, 16, 0.62);
-  --line: rgba(244, 241, 255, 0.16);
+  --ink: #f2f0f5;
+  --ink-soft: rgba(242, 240, 245, 0.62);
+  --panel: rgba(6, 6, 8, 0.8);
+  --line: rgba(242, 240, 245, 0.18);
   --display: 'Syne', 'Segoe UI', sans-serif;
   --mono: 'Space Mono', ui-monospace, Consolas, monospace;
 }
@@ -12,7 +12,7 @@ html,
 body {
   height: 100%;
   margin: 0;
-  background: #05020a;
+  background: #050507;
   color: var(--ink);
   font-family: var(--mono);
   overflow: hidden;
@@ -22,9 +22,8 @@ kbd {
   display: inline-block;
   min-width: 1.5em;
   margin-right: 0.25em;
-  padding: 0.12em 0.3em;
+  padding: 0.1em 0.3em;
   border: 1px solid var(--line);
-  border-radius: 4px;
   font: 700 0.72rem var(--mono);
   text-align: center;
   color: var(--ink);
@@ -39,10 +38,7 @@ kbd {
   display: grid;
   place-items: center;
   padding: 24px;
-  background:
-    radial-gradient(60% 55% at 50% 42%, rgba(255, 61, 242, 0.20), transparent 70%),
-    radial-gradient(50% 45% at 68% 70%, rgba(53, 230, 255, 0.14), transparent 70%),
-    #05020a;
+  background: #050507;
   transition: opacity 0.9s ease, visibility 0.9s;
 }
 
@@ -51,38 +47,125 @@ kbd {
   visibility: hidden;
 }
 
+/* A still picture, flat: the gallery's sky, one of its figures, and a ridge. Nothing here
+   moves except the figure and its line changing every few seconds. */
+.intro-sky {
+  position: absolute;
+  inset: 0;
+  background: url(sky.png) center / cover;
+}
+
+.intro-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 7, 0.5);
+}
+
+/* One of the gallery's figures, over the ridge. It changes with the quoted line. */
+#intro-figure {
+  position: absolute;
+  right: clamp(-40px, 6vw, 120px);
+  bottom: 16vh;
+  height: min(62vh, 620px);
+  max-width: 44vw;
+  object-fit: contain;
+  transition: opacity 0.9s ease;
+}
+
+#intro-figure.is-changing {
+  opacity: 0;
+}
+
+/* A ridge drawn the way the worlds are: dark faces, bright straight edges. */
+.intro-ridge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 42vh;
+}
+
+.intro-ridge .rock {
+  fill: #0a0408;
+}
+
+.intro-ridge polyline,
+.intro-ridge path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.intro-ridge path {
+  stroke-width: 0.7;
+  opacity: 0.6;
+}
+
 .intro-inner {
-  width: min(720px, 100%);
-  text-align: center;
+  position: relative;
+  justify-self: start;
+  align-self: center;
+  width: min(860px, 56vw);
+  min-width: min(100%, 320px);
+  margin-left: clamp(0px, 6vw, 96px);
+  text-align: left;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.75);
+}
+
+#intro-lore {
+  margin: 26px 0 0;
+  padding: 0;
+  max-width: 68ch;
+  min-height: 6.2em;   /* room for the longest line, so the button below does not jump */
+  transition: opacity 0.9s ease;
+}
+
+#intro-lore.is-changing {
+  opacity: 0;
+}
+
+#intro-lore p {
+  margin: 0 0 10px;
+  font: 600 clamp(1rem, 1.7vw, 1.3rem)/1.45 var(--display);
+  color: var(--ink);
+}
+
+#intro-lore cite {
+  font: 400 0.7rem var(--mono);
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .eyebrow {
-  margin: 0 0 14px;
-  font-size: 0.74rem;
-  letter-spacing: 0.34em;
+  margin: 0 0 18px;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--ink-soft);
 }
 
 #intro h1 {
   margin: 0;
   font: 800 clamp(1.9rem, 6.2vw, 3.9rem)/0.95 var(--display);
   letter-spacing: -0.03em;
-  text-wrap: balance;
 }
 
 .lede {
-  margin: 20px auto 30px;
-  max-width: 44ch;
-  font-size: 0.9rem;
+  margin: 26px 0 30px;
+  max-width: 46ch;
+  font-size: 0.82rem;
   line-height: 1.65;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 .load {
-  height: 2px;
-  margin: 0 auto 22px;
-  width: min(280px, 80%);
+  height: 1px;
+  margin: 0 0 26px;
+  width: 100%;
   background: var(--line);
   overflow: hidden;
 }
@@ -90,41 +173,39 @@ kbd {
 #load-bar {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--ink);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.35s ease;
 }
 
 #enter {
-  padding: 14px 30px;
+  padding: 13px 22px;
   border: 1px solid var(--line);
-  border-radius: 999px;
   background: transparent;
   color: var(--ink-soft);
-  font: 700 0.8rem var(--mono);
-  letter-spacing: 0.14em;
+  font: 700 0.78rem var(--mono);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: wait;
-  transition: background 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 #enter:not(:disabled) {
-  border-color: var(--accent);
+  border-color: var(--ink);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 0 0 34px -8px var(--accent);
 }
 
 #enter:not(:disabled):hover,
 #enter:not(:disabled):focus-visible {
-  background: var(--accent);
-  color: #05020a;
+  background: var(--ink);
+  color: #050507;
   outline: none;
 }
 
 .keys {
-  margin: 26px 0 0;
+  margin: 30px 0 0;
   font-size: 0.72rem;
   color: var(--ink-soft);
 }
@@ -163,9 +244,16 @@ kbd {
 #world-label {
   margin-top: 6px !important;
   font-size: 0.68rem;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.2em;
   color: var(--accent);
   transition: color 0.6s;
+}
+
+#seen {
+  margin-top: 4px !important;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
 }
 
 #hint {
@@ -174,11 +262,8 @@ kbd {
   bottom: 22px;
   z-index: 10;
   margin: 0;
-  padding: 9px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
+  padding: 9px 12px;
+  background: var(--panel);
   font-size: 0.68rem;
   color: var(--ink-soft);
   transition: opacity 1.2s ease;
@@ -189,76 +274,21 @@ kbd {
   opacity: 0;
 }
 
-/* Artwork caption */
-
-#card {
-  position: fixed;
-  left: 26px;
-  bottom: 26px;
-  z-index: 12;
-  width: min(430px, calc(100vw - 52px));
-  padding: 22px 24px 24px;
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--accent);
-  border-radius: 4px 14px 14px 4px;
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s;
-  pointer-events: none;
-}
-
-#card.is-on {
-  opacity: 1;
-  transform: none;
-}
-
-#card {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-#card-thumb {
-  flex: none;
-  width: 92px;
-  height: 92px;
-  object-fit: contain;
-  border-radius: 8px;
-  background: rgba(244, 241, 255, 0.06);
-}
-
-#card-open {
-  margin: 14px 0 0;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-}
-
-#seen {
-  margin-top: 4px !important;
-  font-size: 0.68rem;
-  letter-spacing: 0.3em;
-  color: var(--ink-soft);
-}
-
 /* Compass */
 
+/* Top centre, where the eye already is: which way, what it is, how far. */
 #compass {
   position: fixed;
-  top: 22px;
-  right: 26px;
+  top: 20px;
+  left: 50%;
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px 8px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
+  gap: 14px;
+  /* No panel behind it: it sits straight on the world, with a shadow under the type. */
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
   opacity: 0;
+  transform: translateX(-50%);
   transition: opacity 0.8s ease 0.6s;
   pointer-events: none;
 }
@@ -271,24 +301,105 @@ kbd {
   opacity: 0;
 }
 
-#compass-arrow {
+.dial {
   position: relative;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
+  flex: none;
+  width: clamp(120px, 13vw, 168px);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.85));
+}
+
+.dial svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* The ring is the worlds' own drawing: straight wire edges, no curves. */
+.dial .ring {
+  fill: rgba(6, 6, 8, 0.35);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linejoin: miter;
+  transition: stroke 0.6s;
+}
+
+.dial .ring.inner {
+  fill: none;
+  stroke-width: 0.6;
+  opacity: 0.55;
+}
+
+#compass-needle {
   transition: transform 0.12s linear;
 }
 
-#compass-arrow::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 5px;
-  margin-left: -5px;
-  border: 5px solid transparent;
-  border-bottom: 11px solid var(--accent);
-  border-top: 0;
+#compass-needle polygon {
+  fill: var(--ink);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  transition: stroke 0.6s;
+}
+
+/* One tick per piece. Hollow until read. */
+#compass-ticks rect {
+  fill: none;
+  stroke: rgba(242, 240, 245, 0.6);
+  stroke-width: 1;
+  transition: fill 0.5s, stroke 0.5s;
+}
+
+#compass-ticks rect.is-seen {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+/* What the needle points at, drawn in the middle of the dial: an egg or a portal. */
+.dial .glyph {
+  display: none;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+}
+
+.dial .glyph path {
+  stroke-width: 0.7;
+  opacity: 0.6;
+}
+
+#compass.has-egg .glyph.egg,
+#compass.is-portal-step .glyph.gate {
+  display: block;
+}
+
+/* A portal step takes the colour of the world the portal leads to, as the portal itself does:
+   the sigil in the middle, the ring, the needle and the label. */
+#compass.is-portal-step .glyph.gate {
+  stroke: var(--step, var(--accent));
+  stroke-width: 3;
+}
+
+#compass.is-portal-step .ring,
+#compass.is-portal-step #compass-needle polygon {
+  stroke: var(--step, var(--accent));
+}
+
+#compass.is-portal-step b {
+  color: var(--step, var(--ink));
+}
+
+/* Portal steps are diamonds among the pieces' squares. */
+#compass-ticks rect.is-portal {
+  stroke: var(--accent);
+}
+
+/* A sealed egg reached out of turn. */
+#card.is-locked #card-thumb,
+#card.is-locked #card-open {
+  display: none;
 }
 
 #compass p {
@@ -298,15 +409,107 @@ kbd {
 }
 
 #compass b {
-  font: 700 0.62rem var(--mono);
-  letter-spacing: 0.22em;
+  font: 700 0.7rem var(--mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 #compass i {
-  font: 800 0.95rem var(--display);
+  font: 800 clamp(1.8rem, 3.2vw, 2.6rem)/1 var(--display);
   font-style: normal;
+  letter-spacing: -0.02em;
+}
+
+#compass-seen {
+  margin-top: 4px;
+  font: 400 0.7rem var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+#compass-seen.is-bumped {
+  animation: bump 0.9s ease;
+}
+
+/* Collected: the dial kicks and the new tick lands. */
+#compass.is-collect .dial {
+  animation: kick 0.7s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+#compass-ticks rect.is-seen {
+  animation: land 0.7s cubic-bezier(0.2, 1.6, 0.4, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes kick {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+@keyframes land {
+  0% { scale: 3.2; }
+  100% { scale: 1; }
+}
+
+#compass.is-done .dial {
+  opacity: 0.5;
+}
+
+#compass.is-done #compass-needle {
+  display: none;
+}
+
+#flash.is-soft {
+  opacity: 0.22;
+  transition: opacity 0.12s ease;
+}
+
+/* Boost: the edge of the view takes the colour of the boost flame. */
+#boost-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(43, 209, 255, 0.42) 100%);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+html.is-boosting #boost-fx {
+  opacity: 1;
+  transition: opacity 0.18s ease;
+}
+
+/* A piece read for the first time. */
+#card-new {
+  display: none;
+  margin: 0 0 8px;
+  font: 700 0.66rem var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+#card.is-new #card-new {
+  display: block;
+}
+
+#card.is-new #card-number {
+  display: none;
+}
+
+#seen.is-bumped {
+  animation: bump 0.9s ease;
+}
+
+@keyframes bump {
+  0% { color: var(--ink); transform: translateX(0); }
+  25% { color: var(--accent); transform: translateX(6px); }
+  100% { color: var(--ink-soft); transform: translateX(0); }
 }
 
 /* Air time */
@@ -314,56 +517,97 @@ kbd {
 #air {
   position: fixed;
   left: 50%;
-  top: 22%;
+  top: 20%;
   z-index: 11;
   margin: 0;
-  transform: translate(-50%, 10px) scale(0.94);
-  font: 800 clamp(1.6rem, 4.4vw, 2.8rem) var(--display);
-  letter-spacing: -0.02em;
+  transform: translate(-50%, 8px);
+  font: 800 clamp(1.4rem, 3.6vw, 2.2rem) var(--display);
+  letter-spacing: -0.01em;
   color: var(--ink);
-  text-shadow: 0 0 26px var(--accent);
   opacity: 0;
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.35s ease, transform 0.35s ease;
   pointer-events: none;
 }
 
 #air.is-on {
   opacity: 1;
-  transform: translate(-50%, 0) scale(1);
+  transform: translate(-50%, 0);
 }
 
-/* A streak around the edge of the view while boosting. */
-html::after {
-  content: '';
+/* Artwork caption */
+
+#card {
   position: fixed;
-  inset: 0;
-  z-index: 9;
-  pointer-events: none;
-  box-shadow: inset 0 0 160px -30px var(--accent);
+  left: 26px;
+  bottom: 26px;
+  z-index: 12;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  width: min(440px, calc(100vw - 52px));
+  box-sizing: border-box;
+  padding: 20px;
+  background: var(--panel);
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
 }
 
-html.is-boosting::after {
-  opacity: 0.55;
+#card.is-on {
+  opacity: 1;
+  transform: none;
 }
 
-/* A piece opened full screen */
+#card-thumb {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+}
+
+#card-number {
+  margin: 0 0 8px;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+}
+
+#card-title {
+  margin: 0 0 10px;
+  font: 800 1.3rem/1.1 var(--display);
+  letter-spacing: -0.01em;
+}
+
+#card-text {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+#card-open {
+  margin: 14px 0 0;
+  font-size: 0.68rem;
+  color: var(--ink);
+}
+
+/* A piece opened full screen: the image and its text sit together in the middle. */
 
 #viewer {
   position: fixed;
   inset: 0;
   z-index: 25;
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  display: flex;
   align-items: center;
-  gap: clamp(20px, 5vw, 70px);
-  padding: clamp(20px, 6vw, 80px);
-  background: rgba(5, 2, 10, 0.86);
-  backdrop-filter: blur(18px);
+  justify-content: center;
+  gap: clamp(24px, 3.5vw, 48px);
+  padding: clamp(20px, 5vw, 64px);
+  box-sizing: border-box;
+  background: rgba(5, 5, 7, 0.92);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.35s ease, visibility 0.35s;
+  transition: opacity 0.3s ease, visibility 0.3s;
 }
 
 #viewer.is-on {
@@ -373,100 +617,388 @@ html.is-boosting::after {
 
 #viewer figure {
   margin: 0;
-  height: 100%;
-  min-height: 0;
-  display: grid;
-  place-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 #viewer-img {
-  max-width: 100%;
-  max-height: calc(100vh - clamp(40px, 12vw, 160px));
+  display: block;
+  max-width: min(52vw, 720px);
+  max-height: calc(100vh - clamp(40px, 10vw, 128px));
   object-fit: contain;
-  filter: drop-shadow(0 0 60px color-mix(in srgb, var(--accent) 45%, transparent));
-  transform: scale(0.96);
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#viewer.is-on #viewer-img {
-  transform: none;
+.viewer-text {
+  flex: 0 0 min(360px, 34vw);
 }
 
 #viewer-number {
-  margin: 0 0 14px;
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
-  color: var(--accent);
+  margin: 0 0 12px;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
 }
 
 #viewer-title {
-  margin: 0 0 18px;
-  font: 800 clamp(1.4rem, 2.5vw, 2.2rem)/1.06 var(--display);
-  letter-spacing: -0.02em;
-  text-wrap: balance;
+  margin: 0 0 16px;
+  font: 800 clamp(1.3rem, 2.2vw, 2rem)/1.08 var(--display);
+  letter-spacing: -0.015em;
 }
 
 #viewer-desc {
-  margin: 0 0 30px;
-  max-width: 46ch;
-  font-size: 0.9rem;
+  margin: 0 0 28px;
+  font-size: 0.86rem;
   line-height: 1.75;
   color: var(--ink-soft);
 }
 
 #viewer-close {
-  padding: 11px 20px;
+  padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
   background: transparent;
   color: var(--ink);
-  font: 700 0.72rem var(--mono);
-  letter-spacing: 0.1em;
+  font: 400 0.72rem var(--mono);
   cursor: pointer;
 }
 
 #viewer-close:hover,
 #viewer-close:focus-visible {
-  border-color: var(--accent);
+  border-color: var(--ink);
   outline: none;
 }
 
-@media (max-width: 760px) {
-  #viewer {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
-  }
+/* Flight fuel */
 
-  #viewer-img {
-    max-height: 46vh;
-  }
-
-  #compass {
-    top: auto;
-    bottom: 16px;
-    right: 16px;
-  }
+/* Under the rider, bottom centre: where you are already looking when you fly. It is quiet
+   while the tank is full and comes up as soon as it is being used. */
+#fuel {
+  position: fixed;
+  left: 50%;
+  bottom: 13vh;
+  display: grid;
+  gap: 6px;
+  width: min(280px, 46vw);
+  transform: translateX(-50%);
+  font: 700 0.66rem var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+  opacity: 0.4;
+  transition: opacity 0.4s ease;
 }
 
-#card-number {
-  margin: 0 0 10px;
-  font-size: 0.66rem;
-  letter-spacing: 0.3em;
+#fuel.is-used {
+  opacity: 1;
+}
+
+#fuel i {
+  display: block;
+  height: 9px;
+  border: 1px solid rgba(242, 240, 245, 0.7);
+  background: rgba(5, 5, 7, 0.55);
+}
+
+#fuel-bar {
+  display: block;
+  height: 100%;
+  background: #2bd1ff;       /* the colour of the flight flame */
+  transform-origin: left;
+}
+
+#fuel.is-low #fuel-bar {
+  background: #ff5a4a;
+}
+
+/* The collection */
+
+#open-collection {
+  margin-top: 12px !important;
+  font-size: 0.68rem;
+  color: var(--ink);
+}
+
+#collection {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 56px);
+  box-sizing: border-box;
+  background: rgba(5, 5, 7, 0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+  overflow-y: auto;
+}
+
+#collection.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+
+.collection-inner {
+  width: min(980px, 100%);
+}
+
+/* The brief look after a new piece: lighter, not clickable, and the new slot drops in. */
+#collection.is-peek {
+  background: rgba(5, 5, 7, 0.72);
+  pointer-events: none;
+}
+
+#collection.is-peek #collection-close {
+  visibility: hidden;
+}
+
+#collection-grid li.is-fresh img {
+  animation: drop-in 0.8s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+#collection-grid li.is-fresh {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+@keyframes drop-in {
+  0% { opacity: 0; transform: translateY(-60%) scale(1.7) rotate(-14deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+#collection header {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+#collection h2 {
+  margin: 0;
+  font: 800 clamp(1.4rem, 3vw, 2.2rem) var(--display);
+  letter-spacing: -0.02em;
+}
+
+#collection-count {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--accent);
 }
 
-#card-title {
-  margin: 0 0 12px;
-  font: 800 1.5rem/1.08 var(--display);
-  letter-spacing: -0.015em;
-  text-wrap: balance;
+#collection-close {
+  margin-left: auto;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: 400 0.72rem var(--mono);
+  cursor: pointer;
 }
 
-#card-text {
+#collection-close:hover,
+#collection-close:focus-visible {
+  border-color: var(--ink);
+  outline: none;
+}
+
+#collection-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.7;
+  padding: 0;
+  list-style: none;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+#collection-grid li {
+  background: #050507;
+}
+
+#collection-grid button {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 14px 10px 12px;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  cursor: default;
+}
+
+#collection-grid .is-open button {
+  cursor: pointer;
+}
+
+#collection-grid .is-open button:hover,
+#collection-grid .is-open button:focus-visible {
+  background: rgba(242, 240, 245, 0.07);
+  outline: none;
+}
+
+#collection-grid img,
+#collection-grid svg {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+
+#collection-grid svg {
+  width: 42%;
+  fill: none;
+  stroke: rgba(242, 240, 245, 0.35);
+  stroke-width: 1.4;
+  align-self: center;
+}
+
+.slot-number {
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
   color: var(--ink-soft);
+}
+
+.slot-title {
+  font: 800 0.72rem/1.15 var(--display);
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+#collection-grid .is-open .slot-title {
+  color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  #collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The end */
+
+#win {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 56px);
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.9s ease, visibility 0.9s;
+  overflow-y: auto;
+}
+
+#win.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+
+.win-inner {
+  position: relative;
+  width: min(1040px, 100%);
+  text-align: center;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8);
+}
+
+#win h2 {
+  margin: 0 0 clamp(18px, 3vw, 34px);
+  font: 800 clamp(1.7rem, 5vw, 3.4rem)/1 var(--display);
+  letter-spacing: -0.03em;
+}
+
+#win .eyebrow {
+  color: var(--ink);
+}
+
+/* All fifteen, in tour order, arriving one after another. */
+#win-figures {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 1.4vw, 18px);
+  margin: 0 auto;
+  padding: 0;
+  max-width: 760px;
+  list-style: none;
+}
+
+#win-figures li {
+  aspect-ratio: 1;
+  opacity: 0;
+}
+
+#win.is-on #win-figures li {
+  animation: arrive 0.7s cubic-bezier(0.2, 1.3, 0.4, 1) forwards;
+}
+
+#win-figures img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(26px) scale(0.6) rotate(-8deg); }
+  to { opacity: 1; transform: none; }
+}
+
+#win blockquote {
+  margin: clamp(18px, 3vw, 34px) 0 10px;
+  padding: 0;
+}
+
+#win blockquote p {
+  margin: 0 0 8px;
+  font: 600 clamp(1rem, 1.9vw, 1.4rem)/1.4 var(--display);
+}
+
+#win cite {
+  font: 400 0.7rem var(--mono);
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+#win-stats {
+  margin: 14px 0 24px;
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.win-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.win-actions button {
+  padding: 13px 22px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font: 700 0.78rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.win-actions button:hover,
+.win-actions button:focus-visible {
+  background: var(--ink);
+  color: #050507;
+  outline: none;
 }
 
 /* Portal jump */
@@ -485,7 +1017,7 @@ html.is-boosting::after {
   transition: opacity 0.22s ease;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   #hint {
     display: none;
   }
@@ -494,12 +1026,30 @@ html.is-boosting::after {
     left: 16px;
     bottom: 16px;
     width: calc(100vw - 32px);
-    box-sizing: border-box;
   }
 
   #hud {
     top: 16px;
     left: 16px;
+  }
+
+  #compass {
+    top: 16px;
+    right: 16px;
+  }
+
+  #viewer {
+    flex-direction: column;
+  }
+
+  #viewer-img {
+    max-width: 100%;
+    max-height: 46vh;
+  }
+
+  .viewer-text {
+    flex: none;
+    width: 100%;
   }
 }
 
@@ -508,7 +1058,9 @@ html.is-boosting::after {
   #card,
   #flash,
   #hud,
-  #hint {
+  #hint,
+  #viewer,
+  #air {
     transition-duration: 0.01s;
   }
 }

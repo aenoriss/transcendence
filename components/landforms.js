@@ -9,25 +9,24 @@
 // A landform's local -z is the direction you ride it. `yaw` turns that in degrees:
 // 0 rides toward -z, -90 toward +x, 180 toward +z, 90 toward -x.
 var LANDFORMS = {
+  // Each one sits on the line from an arrival point to a portal or between two pieces,
+  // so the natural route through a world runs over it.
   map1: [
-    { shape: 'kicker', x: 62,  z: 46,  yaw: -90, w: 28, l: 28, h: 6.5 },   // launches toward the first portal
-    { shape: 'hump',   x: 30,  z: -30, yaw: 0,   w: 30, l: 34, h: 4.5 },
-    { shape: 'table',  x: 45,  z: -8,  yaw: -90, w: 26, l: 38, h: 3.8 },
-    { shape: 'kicker', x: 95,  z: 110, yaw: 180, w: 26, l: 26, h: 6 },
+    { shape: 'kicker', x: 38,  z: 38,  yaw: -90, w: 30, l: 28, h: 6.5 },   // launches toward the first portal
+    { shape: 'hump',   x: 60,  z: 70,  yaw: 180, w: 30, l: 32, h: 4.5 },   // on the way to the second
+    { shape: 'table',  x: 45,  z: -28, yaw: 0,   w: 28, l: 30, h: 3.8 },   // on the way to the third
   ],
   map2: [
-    { shape: 'hump',   x: 0,   z: -20, yaw: -90, w: 30, l: 34, h: 4.5 },
-    { shape: 'kicker', x: 60,  z: -5,  yaw: -90, w: 28, l: 28, h: 6.5 },
-    { shape: 'table',  x: 110, z: 5,   yaw: -90, w: 26, l: 40, h: 3.8 },
+    { shape: 'hump',   x: 0,   z: -24, yaw: -90, w: 30, l: 32, h: 4.5 },
+    { shape: 'kicker', x: 52,  z: 6,   yaw: -90, w: 30, l: 28, h: 6.5 },
   ],
   map3: [
-    { shape: 'kicker', x: 18,  z: -40, yaw: 0,   w: 24, l: 28, h: 6.5 },
-    { shape: 'hump',   x: 100, z: 42,  yaw: -90, w: 26, l: 34, h: 4.5 },
+    { shape: 'hump',   x: -8,  z: -28, yaw: 90,  w: 30, l: 32, h: 4.5 },
+    { shape: 'kicker', x: 30,  z: -42, yaw: 0,   w: 26, l: 28, h: 6.5 },
   ],
   map4: [
-    { shape: 'kicker', x: 10,  z: -45, yaw: -90, w: 28, l: 28, h: 6.5 },
-    { shape: 'table',  x: 70,  z: -30, yaw: -90, w: 26, l: 40, h: 3.8 },
-    { shape: 'hump',   x: 140, z: -55, yaw: -90, w: 30, l: 34, h: 4.5 },
+    { shape: 'kicker', x: 0,   z: -28, yaw: -90, w: 30, l: 28, h: 6.5 },
+    { shape: 'hump',   x: 160, z: -25, yaw: -90, w: 30, l: 32, h: 4.5 },
   ],
 };
 
@@ -44,8 +43,8 @@ var PROFILES = {
 // The sides fall away to the floor, so a landform has no walls of its own.
 function sideFalloff(u) {
   var a = Math.abs(u);
-  if (a < 0.5) return 1;
-  var s = 1 - (a - 0.5) / 0.5;
+  if (a < 0.4) return 1;
+  var s = 1 - (a - 0.4) / 0.6;
   return s * s * (3 - 2 * s);
 }
 
@@ -89,7 +88,7 @@ function buildSurface(spec, rand) {
     var base = g.vertices.length;
     for (i = 0; i <= nx; i++) {
       var lip = g.vertices[at(i, nz)];
-      g.vertices.push(new THREE.Vector3(lip.x, 0, lip.z - 1.2));
+      g.vertices.push(new THREE.Vector3(lip.x, 0, lip.z - 3.5));
     }
     for (i = 0; i < nx; i++) {
       g.faces.push(new THREE.Face3(at(i, nz), base + i, at(i + 1, nz)), new THREE.Face3(at(i + 1, nz), base + i, base + i + 1));
@@ -147,9 +146,34 @@ AFRAME.registerSystem('landforms', {
     return { solid: solid, wire: wire };
   },
 
+  // The floor and the mountain faces mirror the sky. They are dark, smooth and metallic, so
+  // what you see in them is the nebula overhead, moving as you move, instead of one light's
+  // soft blob. The sky image is the scene's own, wrapped as an environment.
+  reflectSky: function (material) {
+    if (!this.skyEnv) {
+      var image = document.getElementById('sky');
+      if (!image) return;
+      this.skyEnv = new THREE.Texture(image);
+      this.skyEnv.mapping = THREE.EquirectangularReflectionMapping;
+      this.skyEnv.magFilter = THREE.LinearFilter;
+      this.skyEnv.minFilter = THREE.LinearMipMapLinearFilter;
+      this.skyEnv.needsUpdate = true;
+    }
+    material.envMap = this.skyEnv;
+    // Rough enough that a nearby light spreads into a sheen instead of a hard white spot.
+    material.envMapIntensity = 0.95;
+    material.metalness = 0.8;
+    material.roughness = 0.36;
+    material.needsUpdate = true;
+  },
+
   build: function (mapId, mapEl) {
     if (this.groups[mapId]) return;
-    var mats = this.materialsOf(mapEl);
+    var mats = this.materialsOf(mapEl), self = this;
+    // Every dark face in the world, not only the first: the first world is 16 separate clusters.
+    mapEl.object3D.traverse(function (n) {
+      if (n.isMesh && n.material.color.getHex() !== 0xffffff) self.reflectSky(n.material);
+    });
     var solid = mats.solid.clone();
     solid.flatShading = true;
     solid.side = THREE.DoubleSide;
