@@ -25,17 +25,17 @@ AFRAME.registerComponent('walker', {
     maxStep: { default: 4.5 },   // ground this much above the rider's feet, `reach` ahead, is a wall
     reach: { default: 3 },
     bound: { default: 285 },     // half-width of a world's floor
-    gravity: { default: 40 },
+    gravity: { default: 26 },    // light: jumps hang, and landings are soft
     pop: { default: 1.7 },       // how much of the climb speed a lip turns into lift
     maxRise: { default: 46 },    // fastest the rig is lifted onto a landform, units per second
     maxLaunch: { default: 26 },  // cap on the speed a lip can throw the rig up at
     speed: { default: 1.0 },
     boost: { default: 1.7 },
     hop: { default: 13 },        // the jump a press of Shift starts with
-    flySpeed: { default: 2.3 },  // speed multiplier at full flight
-    flyHeight: { default: 7 },   // height the flight holds above the ground
-    flyLift: { default: 20 },    // how hard the board pushes up toward that height
-    flyClimb: { default: 7 },    // fastest it rises
+    flySpeed: { default: 2.8 },  // speed multiplier at full flight
+    flyHeight: { default: 10 },  // height the flight holds above the ground
+    flyLift: { default: 34 },    // how hard the board pushes up toward that height
+    flyClimb: { default: 12 },   // fastest it rises
     flyFuel: { default: 3.2 },   // seconds of flight in a full tank
     flyRefill: { default: 4 },   // seconds to refill it
     portalRock: { default: 21 }, // radius of a portal's solid base
@@ -238,7 +238,7 @@ AFRAME.registerComponent('walker', {
 
     // Speed builds and falls away gradually instead of switching.
     var wantSpeed = flying ? data.flySpeed : boosting ? data.boost : 1;
-    this.speedMul += (wantSpeed - this.speedMul) * Math.min(1, dt * (wantSpeed > this.speedMul ? 1.6 : 3));
+    this.speedMul += (wantSpeed - this.speedMul) * Math.min(1, dt * (wantSpeed > this.speedMul ? 2.8 : 3.4));
     if (Math.abs(this.speedMul - this.speedSet) > 0.03) {
       this.speedSet = this.speedMul;
       this.el.setAttribute('movement-controls', 'speed', data.speed * this.speedMul);

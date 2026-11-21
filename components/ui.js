@@ -132,7 +132,7 @@
     scene.addEventListener('worldchange', function (e) {
       var from = world.key;
       world = e.detail;
-      $('world-label').textContent = e.detail.label + ' · ' + e.detail.name;
+      $('world-label').textContent = e.detail.name;
       root.style.setProperty('--accent', e.detail.accent);
       closeCard();
       // Crossing a portal is a step of the tour too.
@@ -254,15 +254,15 @@
       void slots[number].offsetWidth;
       slots[number].classList.add('is-fresh');
       collection.classList.add('is-on', 'is-peek');
-      peekTimer = setTimeout(function () { collection.classList.remove('is-on', 'is-peek'); }, 1900);
+      peekTimer = setTimeout(function () { collection.classList.remove('is-on', 'is-peek'); }, 950);
     }
     scene.addEventListener('artworknear', function (e) {
       openSlot(e.detail);
       if (!e.detail.first) return;
       var last = Object.keys(opened).length === 15;
-      setTimeout(function () { peek(e.detail.number); }, 1100);
+      setTimeout(function () { peek(e.detail.number); }, 750);
       // The last egg: let its opening and the collection play out, then show the end.
-      if (last) setTimeout(showWin, 3400);
+      if (last) setTimeout(showWin, 2400);
     });
 
     // ---- The end: all fifteen figures arrive one after another over the sky, with how long
@@ -310,16 +310,17 @@
     // ---- Compass: where the next step of the tour is from here.
     var needle = $('compass-needle'), what = $('compass-what'), distEl = $('compass-dist');
     var forward = new THREE.Vector3(), lastUpdate = 0, sigilFor = null;
-    var fuelBar = $('fuel-bar'), fuelBox = $('fuel'), fuelShown = -1;
+    var fuelRing = $('fuel-ring'), fuelText = $('fuel-text'), fuelShown = -1;
     function tickCompass(now) {
       requestAnimationFrame(tickCompass);
-      // The fuel bar follows the tank every frame.
+      // The fuel band round the dial follows the tank every frame.
       var walker = rig.components && rig.components.walker;
       if (walker && Math.abs(walker.fuel - fuelShown) > 0.004) {
         fuelShown = walker.fuel;
-        fuelBar.style.transform = 'scaleX(' + fuelShown.toFixed(3) + ')';
-        fuelBox.classList.toggle('is-low', fuelShown < 0.2);
-        fuelBox.classList.toggle('is-used', fuelShown < 0.995);
+        fuelRing.style.strokeDashoffset = ((1 - fuelShown) * 100).toFixed(2);
+        fuelText.textContent = 'Fuel ' + Math.round(fuelShown * 100);
+        compass.classList.toggle('is-low-fuel', fuelShown < 0.2);
+        compass.classList.toggle('is-burning', walker.flying);
       }
       if (!entered || now - lastUpdate < 90) return;
       lastUpdate = now;

@@ -4,10 +4,10 @@
 // Each has the map it shows, its name, where you land, where the return portal stands, the fog
 // and accent colour of its floor, the sigil that stands for it, and the pieces hung in it.
 var WORLDS = {
-  map0: { map: 'map1', label: 'WORLD 01', name: 'The Threshold',       sigil: 'diamond',  spawn: [0, 3, 0],     fog: '#1a0410', accent: '#ff3df2', artworks: [1, 2, 3] },
-  map1: { map: 'map2', label: 'WORLD 02', name: 'The Thought Fields',  sigil: 'circle',   spawn: [-31, 3, -50], back: [-47, 0, -45], backRot: 90,  fog: '#02101a', accent: '#35e6ff', artworks: [4, 5, 6, 7, 8] },
-  map2: { map: 'map3', label: 'WORLD 03', name: 'The Grove of Shapes', sigil: 'triangle', spawn: [6, 3, -5],    back: [37, 0, -6],    backRot: 270, fog: '#041a08', accent: '#52ff6e', artworks: [9, 10, 11, 12] },
-  map3: { map: 'map4', label: 'WORLD 04', name: 'The Quiet Deep',      sigil: 'hexagon',  spawn: [-26, 3, -42], back: [-54, 0, -42],  backRot: 90,  fog: '#06061c', accent: '#9a86ff', artworks: [13, 14, 15] },
+  map0: { map: 'map1', name: 'The Threshold',       sigil: 'diamond',  spawn: [0, 3, 0],     fog: '#1a0410', accent: '#ff3df2', artworks: [1, 2, 3] },
+  map1: { map: 'map2', name: 'The Thought Fields',  sigil: 'circle',   spawn: [-31, 3, -50], back: [-47, 0, -45], backRot: 90,  fog: '#02101a', accent: '#35e6ff', artworks: [4, 5, 6, 7, 8] },
+  map2: { map: 'map3', name: 'The Grove of Shapes', sigil: 'triangle', spawn: [6, 3, -5],    back: [37, 0, -6],    backRot: 270, fog: '#041a08', accent: '#52ff6e', artworks: [9, 10, 11, 12] },
+  map3: { map: 'map4', name: 'The Quiet Deep',      sigil: 'hexagon',  spawn: [-26, 3, -42], back: [-54, 0, -42],  backRot: 90,  fog: '#06061c', accent: '#9a86ff', artworks: [13, 14, 15] },
 };
 
 // Each world's sigil as points on a unit circle, so the sign and the compass draw the same shape.
@@ -38,7 +38,7 @@ function showWorld(key) {
   scene.setAttribute('fog', { type: 'exponential', color: world.fog, density: 0.0042 });
   var glow = document.getElementById('glow');
   if (glow) glow.setAttribute('light', 'color', world.accent);
-  scene.emit('worldchange', { key: key, map: world.map, label: world.label, name: world.name, accent: world.accent, artworks: world.artworks });
+  scene.emit('worldchange', { key: key, map: world.map, name: world.name, accent: world.accent, artworks: world.artworks });
 }
 
 // A soft round dot, shared by the motes of every portal.
@@ -53,8 +53,8 @@ var DOT = (function () {
   return c;
 })();
 
-// The sign over a portal: the destination's sigil, number and name, in its colour. It always
-// faces the rider.
+// The sign over a portal: the destination's sigil and name. It always faces the rider.
+// Worlds are known by name only, never by a number.
 function portalSign(world) {
   var canvas = document.createElement('canvas');
   canvas.width = 1024; canvas.height = 320;
@@ -69,14 +69,11 @@ function portalSign(world) {
     c.closePath();
     c.lineWidth = 9; c.strokeStyle = world.accent; c.stroke();
     c.textAlign = 'center';
-    c.fillStyle = world.accent;
-    c.font = "700 44px 'Space Mono', monospace";
-    c.fillText(world.label, 512, 168);
     c.fillStyle = '#ffffff';
-    var big = world.name.toUpperCase(), size = 92;
+    var big = world.name.toUpperCase(), size = 104;
     c.font = "800 " + size + "px 'Syne', sans-serif";
     while (c.measureText(big).width > 990 && size > 40) { size -= 4; c.font = "800 " + size + "px 'Syne', sans-serif"; }
-    c.fillText(big, 512, 268);
+    c.fillText(big, 512, 236);
     texture.needsUpdate = true;
   };
   draw();
@@ -113,9 +110,10 @@ AFRAME.registerComponent('teleport', {
     var light = new THREE.PointLight(colour, 1.2, 60, 1.8);
     light.position.y = 9;
     var sign = portalSign(world);
-    // Out in front of the mouth and above it, on the side you arrive from, so neither the
-    // rock nor the ray going up from its top stands between you and the name.
+    // The sign is kept on whichever side of the portal the rider is on (see tick), so neither
+    // the rock nor the ray going up from its top ever stands between you and the name.
     sign.position.set(0, 27, 27);
+    this.sign = sign;
 
     // The motes keep outside the rock, which the rider cannot pass either, so none cuts through it.
     var count = 110, positions = new Float32Array(count * 3);
@@ -169,6 +167,16 @@ AFRAME.registerComponent('teleport', {
     var fx = this.fx, rigPos = this.rig.object3D.position, here = this.el.object3D.position;
     var dx = rigPos.x - here.x, dz = rigPos.z - here.z;
     var away = Math.sqrt(dx * dx + dz * dz);
+
+    // Swing the sign round to the rider's side. Its place is given in the portal's own frame,
+    // so the direction to the rider is turned back by the portal's rotation first.
+    if (away > 0.5) {
+      var turn = this.el.object3D.rotation.y, wx = dx / away, wz = dz / away;
+      var lx = wx * Math.cos(turn) - wz * Math.sin(turn), lz = wx * Math.sin(turn) + wz * Math.cos(turn);
+      var ease = Math.min(1, delta * 0.005);
+      this.sign.position.x += (lx * 27 - this.sign.position.x) * ease;
+      this.sign.position.z += (lz * 27 - this.sign.position.z) * ease;
+    }
 
     // The effects run hotter as the rider comes close.
     var heat = Math.max(0, Math.min(1, 1 - (away - this.data.radius) / 70));   // 0 far off, 1 at the mouth
