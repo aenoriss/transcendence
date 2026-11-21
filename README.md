@@ -1,52 +1,65 @@
 # Transcendence
 
-A walkable art gallery in the browser. You steer an avatar over a navigation mesh, past framed artworks, and portals swap the whole world around you.
+A gallery you ride through in the browser. Four neon worlds, fifteen artworks, portals between them, and terrain you can launch off.
 
 ## Why I built it
 
-I wanted movement in a browser world that felt like actually walking. So Transcendence is a small gallery built around that: a first-person avatar held to the ground by a navmesh, a wall of artworks that open when you get close, and portals that carry you between worlds.
+Transcendence was freelance work for an indie art gallery. They wanted their collection shown the way the pieces look: loud, low-poly and a little strange. So instead of a white room with frames, it is a set of worlds you cross on a board. You ride up to a piece to read it, and into a portal to leave the world you are in. The wireframe mountains, the sky and the avatar follow the gallery's own style.
 
 ## What it does
 
-- First-person walking, held to a navmesh so you stay on walkable ground and slide along edges
-- Portals that hide the current world, show the next one and drop you at its spawn point
-- 15 framed artworks, shown per world, each with a title and a text that open when you walk up to it
-- An avatar with a particle trail
-- A looping soundtrack
+- Third-person riding, with the camera orbiting the avatar as you drag
+- Terrain that stops you: mountains are walls, and you slide along them
+- Kickers, humps and tables that rise out of each world's floor and throw you into the air
+- A boost on Space and a hop on Shift, with an air-time readout when you land a real jump
+- Portals that swap the whole world under a flash of the next world's colour
+- 15 artworks, each with a ring on the floor, a plate with its number and title, a caption card when you are close, and a full-screen view on E
+- A compass that points at the nearest piece you have not read yet, and a count of the ones you have
+- A looping soundtrack that starts when you enter
 
 ## How it works
 
-The scene is A-Frame 0.8.2. The rig carries `movement-controls` for input and a navmesh constraint for grounding. Everything is one HTML file, three components and the models beside it. There is no build step.
+The scene is A-Frame 0.8.2. It is one HTML file, a stylesheet and five small scripts, with every model, texture and sound beside them. There is no build step.
 
 ```mermaid
 flowchart LR
-  I[movement-controls input] --> N[simple-navmesh-constraint]
-  M[Recast navmesh] --> N
-  N -->|8 rays down per step| G[Rig position]
-  G --> P{Within 6 units of a visible portal?}
-  P -->|yes| SW[Hide map, show map, respawn, move the return portal]
-  G --> A{Within 25 units of an artwork?}
-  A -->|yes| INFO[Info panel with its title and text]
+  I[movement-controls<br/>WASD] --> W[walker<br/>walls, ground, air]
+  M[Visible world<br/>mountains] --> W
+  L[landforms<br/>kickers, humps, tables] --> W
+  W --> R[Rig position]
+  R --> P[teleport<br/>within 7 units of a portal]
+  P --> S[World swap<br/>map, fog, artworks, landforms]
+  R --> A[showinfo<br/>within 30 units of a piece]
+  A --> U[ui.js<br/>card, viewer, compass, counter]
+  S --> U
 ```
 
-### Walking on a navmesh
+### Walls, ground and air
 
-`simple-navmesh-constraint` is Ada Rose Cannon's component from aframe-xr-boilerplate. Each step it casts rays straight down onto the navmesh: the full step, half of it, then 30, 60 and 80 degrees to each side at shrinking range. The first ray that hits wins, so you slide along an edge. The navmesh was baked with Recast from the first map.
+`movement-controls` only moves the rig sideways and forwards. `walker` decides whether each of those steps is allowed and owns the height.
+
+Before a step is accepted, one ray is cast straight down 4 units ahead of the rig. Mountain ground higher than 2.5 units refuses the step, and so does a landform face that rises more than 2.5 units from where you stand. A refused step is tried again on each axis alone, so you slide along a slope instead of sticking to it.
+
+While grounded, the rig follows the surface under it and remembers how fast that surface was lifting it. When the surface drops away, at the lip of a kicker, the rig leaves with that upward speed times 1.25 and falls at 34 units per second squared until it meets the ground again. That is the whole of the physics: there is no engine behind it.
+
+### Landforms in the world's own material
+
+Each kicker, hump and table is generated at load from a profile curve, with its inner points nudged off the grid by a seeded generator so the faces come out uneven. It takes the two materials of the map it stands in: the dark faceted faces, and the glowing wire, drawn as one thin beam per edge. So a ramp reads as part of the landscape, in that world's colour, and it is the same shape on every load.
 
 ### Portals that swap worlds
 
-Every frame each portal measures its distance to the rig. Under 6 units it hides the current map and its artworks, shows the target map and writes that map's spawn point into the rig position. All four maps sit in one scene, so a swap loads nothing. A single return portal is moved into each world you enter.
+A portal checks its distance to the rig on the floor plane. Inside 7 units it fires once: the page flashes the next world's colour, and under the flash the map, the fog, the artworks, the landforms and the portals are swapped and the rig is set down at that world's spawn. All four maps sit in one scene, so a swap loads nothing. One portal leads back and is moved into each world you enter.
 
-### Artworks that open as you approach
+### Artworks
 
-Each artwork checks its distance to the rig. Under 25 units a plain HTML panel over the canvas shows its title and text, and it closes when you walk away.
+Each piece announces when you come within 30 units and when you leave. The page draws the rest: a caption card with the piece's number, title and text, a full-screen view on E that holds the rider still, the count of pieces seen, and the compass, which is the bearing to the nearest unread piece turned into a rotation.
 
 ## Tech stack
 
 - A-Frame 0.8.2, aframe-extras (`movement-controls`, `animation-mixer`), aframe-particle-system-component
-- aframe-physics-system (n5ro fork) on its default Cannon driver, for one falling box
-- A Recast navmesh and `simple-navmesh-constraint`
-- glTF maps, avatar and portal, a painted sky, a soundtrack
+- Plain JavaScript components: `walker`, `landforms`, `teleport`, `showinfo`, and `ui.js` for the page
+- glTF worlds, avatar and portal, a painted sky, an MP3 soundtrack
+- Syne and Space Mono from Google Fonts
 
 ## Running it
 
@@ -58,15 +71,23 @@ npx serve .
 python -m http.server 8080
 ```
 
-Then open the address it prints. Walk with WASD or the arrow keys, and drag to look around.
+Then open the address it prints.
+
+| Key | Does |
+| - | - |
+| W A S D | ride |
+| drag | look around |
+| Space | boost, while held |
+| Shift | hop |
+| E | open the piece you are standing at, and close it |
 
 ## Known gaps
 
-- It never enters a headset. The VR button has been off since the first version, and A-Frame 0.8.2 predates WebXR.
-- The fourth world cannot be reached: the third portal has no `teleport` component.
-- All portals share one model. The green, pink and blue portal models and the second avatar lived only on Glitch's CDN, which no longer serves them.
-- The footstep loop is not wired to the rig.
+- It runs on a screen with a keyboard. It never enters a headset: A-Frame 0.8.2 predates WebXR and the VR button is off.
+- Touch devices can look around but there is no on-screen control for boost, hop or the viewer.
+- All portals share one model. The green, pink and blue portal models and a second avatar lived only on Glitch's CDN, which no longer serves them.
+- The third and fourth worlds have 3 and 0 artworks. The gallery's 15 pieces are hung 12 and 3.
 
 ## Status
 
-A browser prototype from 2022. Walking, portals and the gallery all run.
+Everything listed above runs, checked in Chrome on desktop.

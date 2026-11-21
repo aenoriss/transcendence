@@ -6,20 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Transcendence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
-  <script src="components/constraint.js"></script>
+  <script src="components/landforms.js"></script>
+  <script src="components/walker.js"></script>
   <script src="components/teleport.js"></script>
   <script src="components/showInfo.js"></script>
+  <script src="components/ui.js"></script>
 </head>
 
 <body>
-  <a-scene vr-mode-ui="enabled: false" physics="debug: false">
+  <a-scene worlds vr-mode-ui="enabled: false" renderer="antialias: true" fog="type: exponential; color: #1a0410; density: 0.0042">
 
-    <a-assets timeout="60000">
+    <a-assets timeout="90000">
       <!-- Every model is a file in this repo. The three coloured portal models were only ever
            on Glitch's CDN, which is gone, so all portals share portal.gltf. -->
       <a-asset-item id="m1" src="map1.gltf"></a-asset-item>
@@ -27,10 +31,8 @@
       <a-asset-item id="m3" src="map3.gltf"></a-asset-item>
       <a-asset-item id="m4" src="map4.gltf"></a-asset-item>
 
-      <a-asset-item id="avatar" src="avatar.gltf"></a-asset-item>
+      <a-asset-item id="avatar-model" src="avatar.gltf"></a-asset-item>
       <a-asset-item id="portal" src="portal.gltf"></a-asset-item>
-
-      <a-asset-item id="navmesh" src="navmesh.gltf"></a-asset-item>
 
       <img id="sky" src="sky.png">
 
@@ -50,107 +52,157 @@
       <img id="art14" src="Textures/artwork14.png">
       <img id="art15" src="Textures/artwork15.png">
 
-      <audio id="soundtrack" src="Textures/soundtrack.wav"></audio>
     </a-assets>
 
-    <a-entity id="map1" gltf-model="#m1" scale="2 2 2" visible="true" static-body="shape: box"></a-entity>
+    <a-entity id="map1" gltf-model="#m1" scale="2 2 2" visible="true"></a-entity>
     <a-entity id="map2" gltf-model="#m2" scale="2 2 2" visible="false"></a-entity>
     <a-entity id="map3" gltf-model="#m3" scale="2 2 2" visible="false"></a-entity>
     <a-entity id="map4" gltf-model="#m4" scale="2 2 2" visible="false"></a-entity>
 
-    <a-sky src="#sky"></a-sky>
-    <!-- <a-sphere color="yellow" visible="false" radius="5" id="portalSpawn" position="1.39 4 -19.8" teleport></a-sphere> -->
-    <!-- <a-sphere color="red" radius="5" id="portal1" position="227 4 70" teleport="goTo: map1"></a-sphere>
-    <a-sphere color="green" radius="5" id="portal2" position="37 4 232" teleport="goTo: map2"></a-sphere>
-    <a-sphere color="blue" radius="5" id="portal3" position="101 4 -193" teleport="goTo: map3"></a-sphere> -->
+    <a-sky id="sky-dome" src="#sky" material="fog: false" drift></a-sky>
 
-    <a-entity id="portalSpawn" animation-mixer="*" visible="false" gltf-model="#portal" position="1.39 -2 -19.8" teleport></a-entity>
-    <a-entity id="portal1" animation-mixer="*" visible="true" gltf-model="#portal"  rotation="0 -90 0" position="151 -2 47" teleport="goTo: map1"></a-entity>
-    <a-entity id="portal2" animation-mixer="*" visible="true" gltf-model="#portal"  rotation="0 180 0" position="49.5 -2 189" teleport="goTo: map2"></a-entity>
-    <a-entity id="portal3" animation-mixer="* " visible="true" gltf-model="#portal" position="103.87 -2 -108" rotation="0 -21.017 0" ></a-entity>
+    <!-- Declaring any light removes A-Frame's default pair, so they are stated here. -->
+    <a-entity light="type: ambient; color: #BBB; intensity: 1"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
 
-    <a-entity id="lol" gltf-model="#navmesh"></a-entity>
+    <!-- portalSpawn is the one portal back to the start. It is moved into each world you enter. -->
+    <a-entity id="portalSpawn" animation-mixer visible="false" gltf-model="#portal" position="1.39 -2 -19.8" teleport="goTo: map0"></a-entity>
+    <a-entity id="portal1" animation-mixer visible="true" gltf-model="#portal" rotation="0 -90 0" position="151 -2 47" teleport="goTo: map1"></a-entity>
+    <a-entity id="portal2" animation-mixer visible="true" gltf-model="#portal" rotation="0 180 0" position="49.5 -2 189" teleport="goTo: map2"></a-entity>
+    <a-entity id="portal3" animation-mixer visible="true" gltf-model="#portal" rotation="0 -21.017 0" position="103.87 -2 -108" teleport="goTo: map3"></a-entity>
 
-    <a-entity id="rig" movement-controls="speed: 1.4" simple-navmesh-constraint="navmesh:#lol" rotation="0 180 0" position="0 3 0" look-controls >
-      <!-- The May 2022 avatar, at the scale and clip it shipped with. Its July replacement
-           (Erizo.gltf) was only on Glitch's CDN and is gone. -->
-      <a-entity gltf-model="#avatar" animation-mixer="clip:animation_0" scale="0.002 0.002 0.002" rotation="0 90 0" position="0 -1 -2"></a-entity>
-      <a-entity id="camera" camera="active: true"></a-entity>
-      <a-entity id="particles" position="0 -2 -3" rotation="0 180 0"
-        particle-system="color: #EF0000,#44CC00; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 1.5; maxAge: 1;">
+    <!-- The rig walks. #head turns with the mouse and carries the camera behind and above
+         the avatar. The avatar follows the head's heading but never its pitch. -->
+    <a-entity id="rig" movement-controls="speed: 1.0; camera: #head" walker position="0 3 0">
+      <!-- A light in the world's colour rides with the avatar, so the floor around it is lit. -->
+      <a-entity id="glow" light="type: point; color: #ff3df2; intensity: 1.3; distance: 90; decay: 1.4" position="0 3.5 5"></a-entity>
+      <a-entity id="head" look-controls>
+        <a-entity id="camera" camera="active: true; fov: 62; far: 6000" position="0 0.9 6.2"></a-entity>
+      </a-entity>
+      <a-entity id="avatar-pivot">
+        <!-- The May 2022 avatar, at the scale and clip it shipped with. Its July replacement
+             (Erizo.gltf) was only on Glitch's CDN and is gone. -->
+        <a-entity id="avatar" gltf-model="#avatar-model" animation-mixer="clip: animation_0" scale="0.002 0.002 0.002" rotation="0 90 0" position="0 -1.4 0"></a-entity>
+        <a-entity id="particles" position="0 -2.6 0.8" rotation="0 180 0"
+          particle-system="color: #ff3df2,#35e6ff; size: 0.4; maxAge: 0.8; particleCount: 60; opacity: 0.6; velocityValue: 0 0.8 2.4; velocitySpread: 0.6 0.4 0.6; accelerationValue: 0 0.3 0; blending: 2">
+        </a-entity>
       </a-entity>
     </a-entity>
 
-
-    <a-box color="#00AA00" position="10 10 -20" depth="5" height="5" width="5" dynamic-body></a-box>
-
     <a-entity position="12 10 -72" id="artwork1" showInfo visible="false">
-      <a-plane src="#art1" rotation="0 -1.83 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art1" rotation="0 -1.83 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-232.47 10 -198.19" id="artwork2" showInfo visible="false">
-      <a-plane src="#art2" rotation="0 13.744 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art2" rotation="0 13.744 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="75 10 259" id="artwork3" showInfo visible="false">
-      <a-plane src="#art3" rotation="0 -1.002 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art3" rotation="0 -1.002 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-84 10 253" id="artwork4" showInfo visible="false">
-      <a-plane src="#art4" rotation="0 0 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art4" rotation="0 0 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-21 10 -248" id="artwork5" showInfo visible="false">
-      <a-plane src="#art5" rotation="-180 -29.182 -180" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art5" rotation="-180 -29.182 -180" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-227 10 165" id="artwork6" showInfo visible="false">
-      <a-plane src="#art6" rotation="0 -22.79 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art6" rotation="0 -22.79 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-232 10 -5" id="artwork7" showInfo visible="false">
-      <a-plane src="#art7" rotation="0 54.4 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art7" rotation="0 54.4 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="237 10 -270" id="artwork8" showInfo visible="false">
-      <a-plane src="#art8" rotation="0 0 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art8" rotation="0 0 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="260.161 10 -18.213" id="artwork9" showInfo visible="false">
-      <a-plane src="#art9" rotation="0 -72.12 0" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art9" rotation="0 -72.12 0" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-197 10 279" id="artwork10" showInfo visible="false">
-      <a-plane src="#art10" rotation="-180 72.17 -180" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art10" rotation="-180 72.17 -180" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="4.955 10 184.35" id="artwork11" showInfo visible="false">
-      <a-plane src="#art11" rotation="-180 10.402 -180" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art11" rotation="-180 10.402 -180" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="144.150 10 212.521" id="artwork12" showInfo visible="false">
-      <a-plane src="#art12" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art12" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-58.68 10 -7" rotation="0 -94.767 0" id="artwork13" showInfo visible="false">
-      <a-plane src="#art13" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art13" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-48.507 10 -35.364" rotation="0 55.222 0" id="artwork14" showInfo visible="false">
-      <a-plane src="#art14" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art14" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
     <a-entity position="-52.523 10 26.763" rotation="-180 77.734 -180" id="artwork15" showInfo visible="false">
-      <a-plane src="#art15" color="#CCC" height="20" width="20" material="transparent: true; side: double"></a-plane>
+      <a-plane src="#art15" height="20" width="20" material="shader: flat; transparent: true; alphaTest: 0.05; side: double; fog: false"></a-plane>
     </a-entity>
 
-    <a-entity id="soundtrack" position="0 0 0" sound="src:#soundtrack autoplay: true; loop:true"></a-entity>
+    <!-- Started by the Enter button, because browsers hold audio until a click. -->
+    <a-entity id="music" sound="src: url(Textures/soundtrack.mp3); autoplay: false; loop: true; positional: false; volume: 0.55"></a-entity>
   </a-scene>
 
-  <div id="modal">
-    <p id="info-title">The Creator of Thoughts</p>
-    <p id="info-description">Everything springs from a thought. A flash, a spark, an impulse that gives rise to the innovative makes its way inside.</p>
+  <div id="intro">
+    <div class="intro-inner">
+      <p class="eyebrow">A walkable gallery</p>
+      <h1>Transcendence</h1>
+      <p class="lede">Four worlds, fifteen artworks. Ride up to a piece to read it, and into a portal to leave the world you are in.</p>
+      <div class="load"><span id="load-bar"></span></div>
+      <button id="enter" disabled>Loading the worlds</button>
+      <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> boost <span>·</span> <kbd>Shift</kbd> hop</p>
+    </div>
   </div>
+
+  <div id="hud">
+    <p class="brand">Transcendence</p>
+    <p id="world-label">WORLD 01</p>
+    <p id="seen">SEEN 00 / 15</p>
+  </div>
+
+  <!-- Points at the nearest piece you have not read yet, or at a portal when this world has none left. -->
+  <div id="compass">
+    <span id="compass-arrow"></span>
+    <p><b id="compass-what">Nearest piece</b><i id="compass-dist"></i></p>
+  </div>
+
+  <p id="air"></p>
+  <p id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> boost <span>·</span> <kbd>Shift</kbd> hop</p>
+
+  <aside id="card">
+    <img id="card-thumb" alt="">
+    <div>
+      <p id="card-number">01 / 15</p>
+      <h2 id="card-title"></h2>
+      <p id="card-text"></p>
+      <p id="card-open"><kbd>E</kbd> look closer</p>
+    </div>
+  </aside>
+
+  <!-- A piece opened full screen. -->
+  <div id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+    <figure>
+      <img id="viewer-img" alt="">
+    </figure>
+    <div class="viewer-text">
+      <p id="viewer-number"></p>
+      <h2 id="viewer-title"></h2>
+      <p id="viewer-desc"></p>
+      <button id="viewer-close"><kbd>E</kbd> back to the world</button>
+    </div>
+  </div>
+
+  <div id="flash"></div>
 
 </body>
 

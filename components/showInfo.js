@@ -1,5 +1,11 @@
+/* global AFRAME */
+
+// An artwork tells the page when the visitor walks up to it and when they leave.
+// The page (components/ui.js) draws the caption card.
 AFRAME.registerComponent("showinfo", {
-  schema: {},
+  schema: {
+    radius: { default: 30 },
+  },
   init: function () {
 
     const player = document.getElementById("rig");
@@ -8,8 +14,15 @@ AFRAME.registerComponent("showinfo", {
     this.trigger = this.el;
 
     this.sw = false;
-
-    // console.log("showInfo")
+    this.seen = false;
+    this.number = Number(this.el.id.replace("artwork", ""));
+    this.baseY = this.el.object3D.position.y;
+    this.phase = this.number * 1.7;
+    this.grow = 1;
+    this.el.sceneEl.addEventListener("loaded", () => this.dress());
+    this.el.sceneEl.addEventListener("worldchange", (e) => {
+      if (this.ring) this.ring.material.color.set(e.detail.accent);
+    });
 
     this.artworks = {
       artwork1: {
@@ -77,40 +90,89 @@ AFRAME.registerComponent("showinfo", {
     }
   },
 
-  update: function () { },
-  tick: function () {
+  // What stands around a piece in the world: a ring on the floor under it, and a plate above
+  // it with its number and title that always faces the visitor.
+  dress: function () {
+    const art = this.artworks[this.el.id];
+    const pos = this.el.object3D.position;
 
-    // console.log("DISTANCE", this.playerPos.distanceTo(this.trigger.getAttribute("position")));
-    let modal = document.getElementById("modal");
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(8.4, 9, 64),
+      new THREE.MeshBasicMaterial({ color: 0xff3df2, transparent: true, opacity: 0.5, side: THREE.DoubleSide, fog: false, depthWrite: false })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(pos.x, 0.45, pos.z);
+    ring.visible = false;
+    this.el.sceneEl.object3D.add(ring);
+    this.ring = ring;
 
-    if (this.playerPos.distanceTo(this.trigger.getAttribute("position")) < 25 && this.trigger.getAttribute("visible") == true) {
-      console.log("INFO SHOWN")
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024; canvas.height = 256;
+    const texture = new THREE.CanvasTexture(canvas);
+    const draw = () => {
+      const c = canvas.getContext("2d");
+      c.clearRect(0, 0, 1024, 256);
+      c.textAlign = "center";
+      c.fillStyle = "rgba(244,241,255,0.72)";
+      c.font = "700 44px 'Space Mono', monospace";
+      c.fillText((this.number < 10 ? "0" : "") + this.number + (this.seen ? "  ·  SEEN" : ""), 512, 70);
+      c.fillStyle = "#ffffff";
+      let size = 84;
+      c.font = "800 " + size + "px 'Syne', sans-serif";
+      while (c.measureText(art.title).width > 980 && size > 34) { size -= 4; c.font = "800 " + size + "px 'Syne', sans-serif"; }
+      c.fillText(art.title, 512, 180);
+      texture.needsUpdate = true;
+    };
+    this.drawPlate = draw;
+    draw();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+    const plate = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, fog: false, depthWrite: false }));
+    plate.scale.set(22, 5.5, 1);
+    plate.position.set(0, 13.4, 0);
+    this.el.object3D.add(plate);
+    this.plate = plate;
+  },
 
+  tick: function (time, delta) {
+    const visible = this.el.object3D.visible;
+    // Each piece drifts a little on its own phase, so a wall of them does not move as one.
+    this.el.object3D.position.y = this.baseY + Math.sin(time * 0.0009 + this.phase) * 0.6;
+
+    const near = visible &&
+      this.playerPos.distanceTo(this.trigger.getAttribute("position")) < this.data.radius;
+
+    // The piece you are standing at grows a little, and its ring brightens and breathes.
+    this.grow += ((near ? 1.08 : 1) - this.grow) * Math.min(1, delta * 0.006);
+    this.el.object3D.scale.set(this.grow, this.grow, this.grow);
+    if (this.ring) {
+      this.ring.visible = visible;
+      const pulse = near ? 0.75 + Math.sin(time * 0.005) * 0.2 : this.seen ? 0.18 : 0.45;
+      this.ring.material.opacity += (pulse - this.ring.material.opacity) * Math.min(1, delta * 0.01);
+    }
+
+    if (near && !this.sw) {
       this.sw = true;
-
-      //Show Modal
-      modal.style.display = "inline";
-
-      //Get id
-      let artworkId = this.trigger.id;
-      // console.log("THIS IS THE ID: ", artworkId);
-
-      //Get title and description.
-      let modalTitle = document.getElementById("info-title");
-      let modalDescription = document.getElementById("info-description");
-
-      modalTitle.innerHTML = this.artworks[artworkId].title;
-      modalDescription.innerHTML = this.artworks[artworkId].description;
-
-    }else if(this.sw == true){
-      //Hide Modal
+      const first = !this.seen;
+      this.seen = true;
+      if (first && this.drawPlate) this.drawPlate();
+      const image = document.getElementById("art" + this.number);
+      this.el.sceneEl.emit("artworknear", {
+        number: this.number,
+        first: first,
+        src: image ? image.getAttribute("src") : "",
+        title: this.artworks[this.el.id].title,
+        description: this.artworks[this.el.id].description,
+      });
+    } else if (!near && this.sw) {
       this.sw = false;
-      modal.style.display = "none";
+      this.el.sceneEl.emit("artworkfar", { number: this.number });
     }
   },
-    remove: function () { },
-    pause: function () { },
-    play: function () {
+});
 
-    },
-  });
+// The sky turns very slowly, so standing still is not a frozen picture.
+AFRAME.registerComponent("drift", {
+  tick: function (time, delta) {
+    this.el.object3D.rotation.y += delta * 0.000012;
+  },
+});
