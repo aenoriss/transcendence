@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Transcendence</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
+  <script src="components/landforms.js"></script>
+  <script src="components/walker.js"></script>
+  <script src="components/teleport.js"></script>
+  <script src="components/showInfo.js"></script>
+  <script src="components/ui.js"></script>
+</head>
+
+<body>
+  <a-scene worlds vr-mode-ui="enabled: false" renderer="antialias: true" fog="type: exponential; color: #1a0410; density: 0.0042">
+
+    <a-assets timeout="90000">
+      <!-- Every model is a file in this repo. The three coloured portal models were only ever
+           on Glitch's CDN, which is gone, so all portals share portal.gltf. -->
+      <a-asset-item id="m1" src="map1.gltf"></a-asset-item>
+      <a-asset-item id="m2" src="map2.gltf"></a-asset-item>
+      <a-asset-item id="m3" src="map3.gltf"></a-asset-item>
+      <a-asset-item id="m4" src="map4.gltf"></a-asset-item>
+
+      <a-asset-item id="avatar-model" src="avatar.gltf"></a-asset-item>
+      <a-asset-item id="portal" src="portal.gltf"></a-asset-item>
+
+      <img id="sky" src="sky.png">
+
+      <img id="art1" src="Textures/artwork1.png">
+      <img id="art2" src="Textures/artwork2.png">
+      <img id="art3" src="Textures/artwork3.png">
+      <img id="art4" src="Textures/artwork4.png">
+      <img id="art5" src="Textures/artwork5.png">
+      <img id="art6" src="Textures/artwork6.png">
+      <img id="art7" src="Textures/artwork7.png">
+      <img id="art8" src="Textures/artwork8.png">
+      <img id="art9" src="Textures/artwork9.png">
+      <img id="art10" src="Textures/artwork10.png">
+      <img id="art11" src="Textures/artwork11.png">
+      <img id="art12" src="Textures/artwork12.png">
+      <img id="art13" src="Textures/artwork13.png">
+      <img id="art14" src="Textures/artwork14.png">
+      <img id="art15" src="Textures/artwork15.png">
+
+    </a-assets>
+
+    <a-entity id="map1" gltf-model="#m1" scale="2 2 2" visible="true"></a-entity>
+    <a-entity id="map2" gltf-model="#m2" scale="2 2 2" visible="false"></a-entity>
+    <a-entity id="map3" gltf-model="#m3" scale="2 2 2" visible="false"></a-entity>
+    <a-entity id="map4" gltf-model="#m4" scale="2 2 2" visible="false"></a-entity>
+
+    <a-sky id="sky-dome" src="#sky" material="fog: false" drift></a-sky>
+
+    <!-- Declaring any light removes A-Frame's default pair, so they are stated here. -->
+    <a-entity light="type: ambient; color: #BBB; intensity: 1"></a-entity>
+    <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
+
+    <!-- portalSpawn is the one portal back to the start. It is moved into each world you enter. -->
+    <a-entity id="portalSpawn" animation-mixer visible="false" gltf-model="#portal" position="1.39 -2 -19.8" teleport="goTo: map0"></a-entity>
+    <!-- The three ways out of the first world stand around the start, each about a hundred units off. -->
+    <a-entity id="portal1" animation-mixer visible="true" gltf-model="#portal" rotation="0 -90 0" position="100 -2 38" teleport="goTo: map1"></a-entity>
+    <a-entity id="portal2" animation-mixer visible="true" gltf-model="#portal" rotation="0 180 0" position="60 -2 122" teleport="goTo: map2"></a-entity>
+    <a-entity id="portal3" animation-mixer visible="true" gltf-model="#portal" rotation="0 0 0" position="45 -2 -80" teleport="goTo: map3"></a-entity>
+
+    <!-- The rig walks. #head turns with the mouse and carries the camera behind and above
+         the avatar. The avatar follows the head's heading but never its pitch. -->
+    <a-entity id="rig" movement-controls="speed: 1.0; camera: #head" walker position="0 3 0">
+      <!-- A light in the world's colour rides with the avatar, so the floor around it is lit. -->
+      <a-entity id="glow" light="type: point; color: #ff3df2; intensity: 0.55; distance: 60; decay: 1.6" position="0 5 5"></a-entity>
+      <a-entity id="head" look-controls>
+        <a-entity id="camera" camera="active: true; fov: 62; far: 6000" position="0 0.9 6.2"></a-entity>
+      </a-entity>
+      <a-entity id="avatar-pivot">
+        <!-- The May 2022 avatar, at the scale and clip it shipped with. Its July replacement
+             (Erizo.gltf) was only on Glitch's CDN and is gone. -->
+        <a-entity id="avatar" gltf-model="#avatar-model" animation-mixer="clip: animation_0" scale="0.003 0.003 0.003" rotation="0 90 0" position="0 -2.1 0"></a-entity>
+        <!-- The flame at the tail of the board, with the settings it has always had. -->
+        <a-entity id="particles" position="0 -2.35 0.75" rotation="0 180 0"
+          particle-system="color: #EF0000,#44CC00; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 1.5; maxAge: 1;">
+        </a-entity>
+        <!-- The nitro flame: the same flame, blue and bigger. It is its own entity so that
+             switching between the two is a matter of showing one and hiding the other. -->
+        <a-entity id="particles-hot" position="0 -2.35 0.75" rotation="0 180 0" visible="false"
+          particle-system="color: #2bd1ff,#f4fbff; rotationAngle: 1.5; rotationAngleSpread: 0.3; size: 2.1; maxAge: 1;">
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- The fifteen pieces. Each stands on open floor but out of sight of where you arrive, behind
+         a mountain cluster, so it has to be found: the compass gives the bearing. Each is
+         turned toward the side it can be reached from. Which world shows which is in
+         components/teleport.js. -->
+
+    <!-- World 01 -->
+    <a-entity position="175 10 -35" rotation="0 0 0" id="artwork1" showInfo visible="false"><a-plane class="piece" src="#art1" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="-75 10 105" rotation="0 144 0" id="artwork2" showInfo visible="false"><a-plane class="piece" src="#art2" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="10 10 -165" rotation="0 -4 0" id="artwork3" showInfo visible="false"><a-plane class="piece" src="#art3" height="20" width="20"></a-plane></a-entity>
+
+    <!-- World 02 -->
+    <a-entity position="-50 10 -188" rotation="0 8 0" id="artwork4" showInfo visible="false"><a-plane class="piece" src="#art4" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="138 10 -92" rotation="0 -76 0" id="artwork5" showInfo visible="false"><a-plane class="piece" src="#art5" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="-135 10 10" rotation="0 120 0" id="artwork6" showInfo visible="false"><a-plane class="piece" src="#art6" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="-72 10 78" rotation="0 162 0" id="artwork7" showInfo visible="false"><a-plane class="piece" src="#art7" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="190 10 -10" rotation="0 -100 0" id="artwork8" showInfo visible="false"><a-plane class="piece" src="#art8" height="20" width="20"></a-plane></a-entity>
+
+    <!-- World 03 -->
+    <a-entity position="-10 10 -185" rotation="0 5 0" id="artwork9" showInfo visible="false"><a-plane class="piece" src="#art9" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="150 10 -20" rotation="0 -84 0" id="artwork10" showInfo visible="false"><a-plane class="piece" src="#art10" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="-205 10 -30" rotation="0 83 0" id="artwork11" showInfo visible="false"><a-plane class="piece" src="#art11" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="70 10 100" rotation="0 -149 0" id="artwork12" showInfo visible="false"><a-plane class="piece" src="#art12" height="20" width="20"></a-plane></a-entity>
+
+    <!-- World 04 -->
+    <a-entity position="-30 10 105" rotation="0 178 0" id="artwork13" showInfo visible="false"><a-plane class="piece" src="#art13" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="90 10 -175" rotation="0 -41 0" id="artwork14" showInfo visible="false"><a-plane class="piece" src="#art14" height="20" width="20"></a-plane></a-entity>
+    <a-entity position="120 10 105" rotation="0 -135 0" id="artwork15" showInfo visible="false"><a-plane class="piece" src="#art15" height="20" width="20"></a-plane></a-entity>
+
+    <!-- Started by the Enter button, because browsers hold audio until a click. -->
+    <a-entity id="music" sound="src: url(Textures/soundtrack.mp3); autoplay: false; loop: true; positional: false; volume: 0.55"></a-entity>
+  </a-scene>
+
+  <!-- The entry screen is made of the gallery's own material: its sky, one of its figures at a
+       time, a ridge drawn the way the worlds are, and a line from that figure's own text. -->
+  <div id="intro">
+    <div class="intro-sky"></div>
+    <img id="intro-figure" src="Textures/artwork1.png" alt="">
+    <svg class="intro-ridge" viewBox="0 0 1200 320" preserveAspectRatio="none" aria-hidden="true">
+      <polygon class="rock" points="0,320 0,210 70,120 130,190 210,60 290,170 350,110 430,230 520,150 600,250 690,130 760,200 850,40 930,180 1010,100 1090,210 1150,150 1200,200 1200,320"></polygon>
+      <polyline points="0,210 70,120 130,190 210,60 290,170 350,110 430,230 520,150 600,250 690,130 760,200 850,40 930,180 1010,100 1090,210 1150,150 1200,200"></polyline>
+      <path d="M70,120 L100,320 M210,60 L170,320 M210,60 L250,320 M210,60 L290,170 M350,110 L330,320 M350,110 L400,320 M520,150 L480,320 M520,150 L560,320 M690,130 L650,320 M690,130 L730,320 M850,40 L800,320 M850,40 L880,320 M850,40 L930,180 M1010,100 L970,320 M1010,100 L1050,320 M1150,150 L1120,320 M1150,150 L1180,320 M130,190 L170,320 M430,230 L400,320 M600,250 L560,320 M760,200 L730,320 M930,180 L970,320 M1090,210 L1050,320"></path>
+    </svg>
+    <div class="intro-inner">
+      <p class="eyebrow">A gallery you ride through</p>
+      <h1>Transcendence</h1>
+      <blockquote id="intro-lore">
+        <p id="intro-lore-text">Everything springs from a thought. A flash, a spark, an impulse that gives rise to the innovative makes its way inside.</p>
+        <cite id="intro-lore-from">The Creator of Thoughts</cite>
+      </blockquote>
+      <p class="lede">Four worlds, fifteen pieces, each sealed in an egg. They open in order. Follow the compass, and take the portal it names when a world has no more to show.</p>
+      <div class="load"><span id="load-bar"></span></div>
+      <button id="enter" disabled>Loading the worlds</button>
+      <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> nitro <span>·</span> <kbd>Shift</kbd> jump <span>·</span> <kbd>C</kbd> collection</p>
+    </div>
+  </div>
+
+  <div id="hud">
+    <p class="brand">Transcendence</p>
+    <p id="world-label">The Threshold</p>
+    <p id="open-collection"><kbd>C</kbd> collection</p>
+    <!-- A piece just added: its picture and the new count, for a second. -->
+    <p id="added"><img id="added-img" alt=""><span>Added <b id="added-count">01 / 15</b></span></p>
+  </div>
+
+  <!-- Points at the nearest piece you have not read yet, or at a portal when this world has none left. -->
+  <div id="compass">
+    <div class="dial">
+      <!-- Drawn like the worlds: a faceted wire ring. The 15 ticks around it are the pieces,
+           filled once read. The needle turns toward the target. -->
+      <svg viewBox="-70 -70 140 140" aria-hidden="true">
+        <g id="compass-ticks"></g>
+        <!-- Flight fuel: the thick band between the ticks and the ring. It empties round the
+             dial while Shift is held and fills again when it is let go. -->
+        <path class="fuel-track" pathLength="100" d="M0,-56 L39.6,-39.6 L56,0 L39.6,39.6 L0,56 L-39.6,39.6 L-56,0 L-39.6,-39.6 Z"></path>
+        <path id="fuel-ring" class="fuel-fill" pathLength="100" d="M0,-56 L39.6,-39.6 L56,0 L39.6,39.6 L0,56 L-39.6,39.6 L-56,0 L-39.6,-39.6 Z"></path>
+        <polygon class="ring" points="0,-46 32.5,-32.5 46,0 32.5,32.5 0,46 -32.5,32.5 -46,0 -32.5,-32.5"></polygon>
+        <polygon class="ring inner" points="0,-46 46,0 0,46 -46,0"></polygon>
+        <g id="compass-needle"><polygon points="0,-62 11,-40 0,-46 -11,-40"></polygon></g>
+        <!-- What the needle is pointing at: a sealed egg, or a portal. -->
+        <g class="glyph egg"><polygon points="0,-26 17,-12 15,12 0,24 -15,12 -17,-12"></polygon><path d="M0,-26 L0,24 M-17,-12 L17,-12 M-15,12 L15,12"></path></g>
+        <g class="glyph gate"><polygon id="compass-sigil" points="0,-20 14,0 0,20 -14,0"></polygon></g>
+      </svg>
+    </div>
+    <p><b id="compass-what">Nearest piece</b><i id="compass-dist"></i><span id="compass-seen">00 / 15 seen</span><span id="fuel-text">Fuel 100</span></p>
+  </div>
+
+  <!-- Tints the edge of the view the colour of the boost flame while Space is held. -->
+  <div id="boost-fx"></div>
+
+  <p id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ride <span>·</span> drag to look <span>·</span> <kbd>Space</kbd> nitro <span>·</span> <kbd>Shift</kbd> jump <span>·</span> <kbd>C</kbd> collection</p>
+
+  <aside id="card">
+    <img id="card-thumb" alt="">
+    <div>
+      <p id="card-number">01 / 15</p>
+      <p id="card-new">New piece</p>
+      <h2 id="card-title"></h2>
+      <p id="card-text"></p>
+      <p id="card-open"><kbd>E</kbd> look closer</p>
+    </div>
+  </aside>
+
+  <!-- A piece opened full screen. -->
+  <div id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+    <figure>
+      <img id="viewer-img" alt="">
+    </figure>
+    <div class="viewer-text">
+      <p id="viewer-number"></p>
+      <h2 id="viewer-title"></h2>
+      <p id="viewer-desc"></p>
+      <button id="viewer-close"><kbd>E</kbd> back to the world</button>
+    </div>
+  </div>
+
+  <!-- The collection: every piece you have opened, and an egg for each one you have not. -->
+  <div id="collection" role="dialog" aria-modal="true" aria-labelledby="collection-title">
+    <div class="collection-inner">
+      <header>
+        <h2 id="collection-title">Collection</h2>
+        <p id="collection-count">00 / 15 opened</p>
+        <button id="collection-close"><kbd>C</kbd> back to the world</button>
+      </header>
+      <ol id="collection-grid"></ol>
+    </div>
+  </div>
+
+  <!-- The end: every egg opened. All fifteen figures over the gallery's sky. -->
+  <div id="win" role="dialog" aria-modal="true" aria-labelledby="win-title">
+    <div class="intro-sky"></div>
+    <div class="win-inner">
+      <p class="eyebrow">All fifteen eggs opened</p>
+      <h2 id="win-title">The collection is complete</h2>
+      <ol id="win-figures"></ol>
+      <blockquote>
+        <p>Time will bring a smile.</p>
+        <cite>Sadness of the Good One</cite>
+      </blockquote>
+      <p id="win-stats"></p>
+      <div class="win-actions">
+        <button id="win-ride">Keep riding</button>
+        <button id="win-collection">See the collection</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="flash"></div>
+
+</body>
+
+</html>

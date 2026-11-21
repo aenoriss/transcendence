@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A sealed egg, drawn the way the worlds are: dark faces, bright straight edges. -->
+  <rect width="64" height="64" fill="#050507"/>
+  <polygon points="32,6 52,22 49,46 32,58 15,46 12,22" fill="#1a0410" stroke="#ff3df2" stroke-width="4" stroke-linejoin="miter"/>
+  <path d="M32,6 L32,58 M12,22 L52,22 M15,46 L49,46" fill="none" stroke="#ff3df2" stroke-width="2" opacity="0.7"/>
+</svg>

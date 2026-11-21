@@ -1,69 +1,115 @@
-# Transcendence 🥽
+<img src="assets/header.webp" alt="Transcendence" width="100%">
 
-A walkable VR art gallery in the browser, with real navmesh-constrained locomotion, Ammo.js physics, and portals that swap you between whole environments.
+# Transcendence
+
+A gallery you ride through in the browser. Fifteen artworks wait in sealed eggs across four neon worlds, and they open only in order.
 
 ## Why I built it
 
-I wanted VR movement that felt like actually walking, so Transcendence lets you do that. You steer a first-person avatar across the ground, held to a navigation mesh, past a wall of framed artworks. Portals move you between separate worlds. It is a small gallery built to get the locomotion and physics right.
+Transcendence was freelance work for an indie art gallery. They wanted their collection shown the way the pieces look: loud, low-poly and a little strange. So instead of a white room with frames, it is a set of worlds you cross on a board. The wireframe mountains, the sky and the avatar follow the gallery's own style.
 
 ## What it does
 
-- First-person VR locomotion, constrained to a navmesh so you stay on walkable ground
-- Physics via Ammo.js compiled to WebAssembly: static level geometry, a falling dynamic body, a mesh collider on the avatar
-- Portals that swap the whole environment and drop you at a new spawn
-- 15 framed artworks that appear and disappear per world
-- An avatar with a particle trail and a footstep loop that kick in when you move
-- A looping soundtrack
+- Third-person riding, with the camera orbiting the avatar as you drag
+- Terrain that stops you: mountains are walls, and you slide along them
+- Kickers, humps and tables that rise out of each world's floor and throw you into the air
+- Nitro on Space and a jump on Shift, both drawing on one tank of fuel
+- Fifteen pieces, each sealed in a chained gold egg until its turn comes
+- A tour of 20 steps: the 15 pieces and the 5 portal crossings between them
+- A compass that points at the next step, a piece or the portal to take, with the fuel as a ring round it
+- Four named worlds, each with its own colour and sigil, and portals that swap one for the next
+- A full-screen view of a piece on E, a collection of what you have opened on C, and an end screen with your time
+- A looping soundtrack that starts when you enter
 
 ## How it works
 
-The scene is A-Frame. The rig carries `movement-controls` for input and a custom navmesh constraint for grounding. Physics runs on aframe-physics-system with the Ammo.js driver. The navmesh was baked with Recast.
+The scene is A-Frame 0.8.2. It is one HTML file, a stylesheet and five small scripts, with every model, texture and sound beside them. There is no build step.
 
 ```mermaid
 flowchart LR
-  I[movement-controls input] --> N[simple-navmesh-constraint]
-  N -->|8-ray scan down onto navmesh| G[Grounded rig position]
-  G --> P{Within 6u of a visible portal?}
-  P -->|yes| SW[Swap map, respawn, toggle artworks, drop return portal]
-  A[Avatar GLTF loaded] --> AM[ammo-shape mesh collider]
-  AM --> PHYS[aframe-physics-system / Ammo.js WASM]
+  I[movement-controls<br/>WASD] --> W[walker<br/>walls, momentum, fuel]
+  M[Visible world<br/>mountains] --> W
+  L[landforms<br/>kickers, humps, tables] --> W
+  W --> R[Rig position]
+  R --> P[teleport<br/>within 7 units of a portal]
+  P --> S[World swap<br/>map, fog, pieces, landforms]
+  R --> E[Egg<br/>within 30 units of a piece]
+  T[Tour<br/>20 steps in order] --> E
+  E --> T
+  S --> T
+  T --> C[Compass<br/>next piece or portal]
 ```
 
-### Navmesh-constrained locomotion
+### A tour, with the portals as steps
 
-The custom `simple-navmesh-constraint` keeps the player grounded by raycasting straight down onto the navmesh every frame. A single downward ray snags on edges and gaps. So it fans out a scan of eight samples along the movement direction, from dead ahead to plus or minus 80 degrees at shrinking distances. The first sample that hits the mesh wins. From there it applies its own gravity term, clamped to a max fall speed, with a 0.5 unit fall tolerance, so you drop onto lower ledges.
+The route is one list of 20 steps: 15 pieces and 5 portal crossings. The compass points at the first step not done. For a portal it shows the destination's name, colour and sigil, the same three things that are on the portal's own sign.
 
-### Ammo.js physics in WebAssembly
+| World | Pieces |
+| - | - |
+| The Threshold | 01 to 03 |
+| The Thought Fields | 04 to 08 |
+| The Grove of Shapes | 09 to 12 |
+| The Quiet Deep | 13 to 15 |
 
-Physics runs on aframe-physics-system with the Mozilla Reality build of Ammo.js, compiled to WebAssembly. The level geometry is a `static-body`. A `dynamic-body` box falls under gravity. The avatar gets an `ammo-shape` mesh collider the moment its GLTF finishes loading, so it collides on its actual mesh geometry.
+### An egg opens only on its turn
+
+Each piece is hidden in a chained egg lit gold, the one colour none of the four worlds uses. Coming within 30 units opens it only if it is the tour's next step. Out of turn it shivers, and a card says which piece comes first.
+
+### One ray decides if a step is allowed
+
+`movement-controls` only moves the rig sideways and forwards. `walker` decides whether each of those steps is allowed and owns the height. Before the rig moves, a ray is cast straight down 3 units ahead. Ground more than 4.5 units above the rider's feet refuses the step, and four height samples turn the rider along the face, so you slide along a slope instead of sticking to it. A portal is rock all the way round except 42 degrees either side of its mouth.
+
+The rider keeps momentum and loses it to friction, and falls at 26 units per second squared. That is the whole of the physics: there is no engine behind it.
+
+### Nitro and jumps on one tank
+
+Space winds the speed up to 2.6 times over 2.4 seconds and would empty the tank in 6. Shift jumps about 14 units and burns a quarter of it, in the air too. The tank takes 22 seconds to refill and only starts after 1.5 seconds without use.
+
+### Landforms in the world's own material
+
+Each kicker, hump and table is generated at load from a profile curve, with its inner points nudged off the grid by a seeded generator so the faces come out uneven. It takes the two materials of the map it stands in, so a ramp reads as part of the landscape, in that world's colour, and it is the same shape on every load.
 
 ### Portals that swap worlds
 
-Getting within range of a portal hides the current map and its artworks, shows the target map, and resets you to that map's spawn point. It also repositions a single return portal. Four separate environments live in one scene with no page reload. Only the active world's artworks stay visible.
+A portal checks its distance to the rig on the floor plane. Inside 7 units it fires once: the page flashes the next world's colour, and under the flash the map, the fog, the pieces, the landforms and the portals are swapped and the rig is set down at that world's spawn. All four maps sit in one scene, so a swap loads nothing.
 
-### Footsteps from a position poll
-
-The footstep loop and particle trail run off a position poll. Every 100 ms a component samples the rig position and diffs it against the previous sample. If the numbers changed, the trail switches on and the footsteps play; a still frame turns both off.
+The picture inside a portal is placed with `KHR_texture_transform`, which the loader in A-Frame 0.8.2 does not read, so it came out shifted and stretched. The file's own offset and scale are applied by hand once the model loads.
 
 ## Tech stack
 
-- WebXR: A-Frame, aframe-extras (`movement-controls`), aframe-particle-system-component
-- Physics: aframe-physics-system (n5ro fork), Ammo.js (WASM, Mozilla Reality build), cannon
-- Navigation: Recast-generated navmesh, a custom `simple-navmesh-constraint` component
-- Build: Webpack, Babel
-- Assets: custom GLTF maps, avatar, and portals; a painted sky; a soundtrack
+- A-Frame 0.8.2, aframe-extras (`movement-controls`, `animation-mixer`), aframe-particle-system-component
+- Plain JavaScript components: `walker`, `landforms`, `teleport`, `showinfo`, and `ui.js` for the page
+- glTF worlds, avatar and portal, a painted sky, an MP3 soundtrack
+- Syne and Space Mono from Google Fonts
 
 ## Running it
 
-WebXR and camera access need https, so the dev server runs over https.
+Any static file server works. The libraries load from CDNs, and every model, texture and sound is a file in this repo.
 
 ```bash
-yarn install
-yarn start        # https://localhost:8080
+npx serve .
+# or
+python -m http.server 8080
 ```
 
-The map, avatar, and portal GLTF assets load from a Glitch CDN. The navmesh and sky are local.
+Then open the address it prints.
+
+| Key | Does |
+| - | - |
+| W A S D | ride |
+| drag | look around |
+| Space | nitro, while held |
+| Shift | jump |
+| E | look at the piece you have just opened, and close it |
+| C | the collection |
+
+## Known gaps
+
+- It runs on a screen with a keyboard. It never enters a headset: A-Frame 0.8.2 predates WebXR and the VR button is off.
+- Touch devices can look around but there is no on-screen control for nitro, the jump, the viewer or the collection.
+- All portals share one model. The green, pink and blue portal models and a second avatar lived only on Glitch's CDN, which no longer serves them.
+- The world names are mine, written for this version, and are not the gallery's.
 
 ## Status
 
-WebXR VR prototype from 2022. The locomotion, physics, portals, and gallery all run. It is a focused experiment in browser VR movement, never shipped as a product.
+Everything listed above runs, checked in Chrome on desktop.
